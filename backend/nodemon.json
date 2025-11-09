@@ -1,0 +1,8 @@
+{
+  "watch": ["*.js", "routes", "models", "middleware", "utils", ".env"],
+  "ignore": ["node_modules", "*.db", "*.log", "database.db"],
+  "delay": 1000,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
