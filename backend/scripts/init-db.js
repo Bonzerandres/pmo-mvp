@@ -2,6 +2,7 @@ import { initDatabase, closeDatabase } from '../database.js';
 import { User } from '../models/User.js';
 import { Project } from '../models/Project.js';
 import { Task } from '../models/Task.js';
+import { WeeklySnapshot } from '../models/WeeklySnapshot.js';
 import { logger } from '../utils/logger.js';
 
 const FORCE = process.argv.includes('--force');
@@ -129,6 +130,62 @@ async function seedDatabase() {
         }
       }
     }
+
+    // Create sample weekly snapshots for the first project's tasks
+    if (createdProjects.length > 0) {
+      logger.info('Creating sample weekly snapshots...');
+      const firstProject = createdProjects[0];
+      const tasks = await Task.findByProject(firstProject.id);
+
+      // Generate snapshots for current and previous month
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+      // Sample snapshot data
+      const WEEKS = [1, 2, 3, 4];
+      for (const task of tasks) {
+        // Previous month snapshots
+        for (const week of WEEKS) {
+          const baseProgress = (week * 25); // 25%, 50%, 75%, 100% progression
+          await WeeklySnapshot.upsert({
+            taskId: task.id,
+            projectId: firstProject.id,
+            year: previousYear,
+            month: previousMonth,
+            weekNumber: week,
+            plannedStatus: 'P',
+            actualStatus: week < 4 ? 'R' : 'RP',
+            plannedProgress: baseProgress,
+            actualProgress: Math.max(0, baseProgress - (week === 4 ? 15 : 5)), // Slight delay in last week
+            comments: week === 4 ? 'Retraso por problemas de entrega' : null
+          });
+        }
+
+        // Current month snapshots
+        for (const week of WEEKS) {
+          if (week > Math.floor((now.getDate() - 1) / 7) + 1) continue; // Only create up to current week
+          
+          const baseProgress = 85 + (week * 5); // Starting from 85% (previous month) going to 100%
+          await WeeklySnapshot.upsert({
+            taskId: task.id,
+            projectId: firstProject.id,
+            year: currentYear,
+            month: currentMonth,
+            weekNumber: week,
+            plannedStatus: 'P',
+            actualStatus: 'R',
+            plannedProgress: baseProgress,
+            actualProgress: baseProgress - 3, // Slight ongoing delay
+            comments: week === 1 ? 'Recuperando retraso del mes anterior' : null
+          });
+        }
+      }
+      logger.info('Created sample weekly snapshots');
+    }
+
     logger.info('Database seeded successfully!');
     await closeDatabase();
     process.exit(0);
@@ -142,6 +199,8 @@ async function seedDatabase() {
     process.exit(1);
   }
 }
+
+
 
 seedDatabase();
 

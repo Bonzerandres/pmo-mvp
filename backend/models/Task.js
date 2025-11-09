@@ -36,6 +36,19 @@ export class Task {
     }
   }
 
+  static async getTaskCount(projectId) {
+    try {
+      const result = await db.getAsync(
+        'SELECT COUNT(*) as count FROM tasks WHERE project_id = ?',
+        [projectId]
+      );
+      return result.count || 0;
+    } catch (err) {
+      logger.error('Task.getTaskCount failed', { err, projectId });
+      throw err;
+    }
+  }
+
   static async update(id, { name, responsible, weight, plannedProgress, actualProgress, estimatedDate, delayDays, comments, evidence }) {
     try {
       const task = await this.findById(id);

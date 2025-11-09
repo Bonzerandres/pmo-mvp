@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "init-db": "node scripts/init-db.js",
+    "db:init": "node scripts/init-db.js",
+    "db:reset": "node scripts/init-db.js --force",
+    "db:check": "node -e \"import('./database.js').then(m=>m.default.checkIntegrity?m.default.checkIntegrity():m.checkIntegrity()).then(console.log).catch(console.error)\"",
+    "test:auth": "curl -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"ceo\",\"password\":\"ceo123\"}'",
+    "test:health": "curl http://localhost:3001/api/health",
+    "prestart": "node -e \"import('path').then(path => import('fs').then(fs => { const envPath = path.resolve(process.cwd(), '.env'); if (!fs.existsSync(envPath)) { console.error('ERROR: .env file not found at ' + envPath); process.exit(1); } }))\"",
+    "prestart": "node -e \"import('path').then(path => import('fs').then(fs => { const envPath = path.resolve(process.cwd(), '.env'); if (!fs.existsSync(envPath)) { console.warn('WARNING: .env file not found, using environment variables from docker-compose or process.env'); } }))\"",
     "lint": "echo \"Add lint script\"",
     "test": "echo \"Add tests\""
   },
@@ -20,6 +26,7 @@
     "sqlite3": "^5.1.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "patch-package": "^8.0.1"
   }
 }

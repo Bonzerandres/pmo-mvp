@@ -43,10 +43,34 @@ async function applyPragmas() {
     await db.runStmt('PRAGMA busy_timeout = 5000;');
     // Balance durability and performance when using WAL
     await db.runStmt('PRAGMA synchronous = NORMAL;');
+    // Ensure foreign key constraints are enforced
+    await db.runStmt('PRAGMA foreign_keys = ON;');
     logger.info('Applied SQLite pragmas: WAL, busy_timeout=5000, synchronous=NORMAL');
   } catch (err) {
     logger.error('Failed to apply pragmas', { err });
     throw err;
+  }
+}
+
+// Helper: check if a table has a given column
+async function columnExists(table, column) {
+  const row = await db.getAsync(`PRAGMA table_info(${table});`);
+  // PRAGMA table_info returns multiple rows; db.getAsync will return the first row
+  // So use db.allAsync to inspect all columns
+  const cols = await db.allAsync(`PRAGMA table_info(${table});`);
+  return cols.some(c => c.name === column);
+}
+
+// Add a column only if it doesn't exist yet (SQLite supports ALTER TABLE ADD COLUMN)
+async function addColumnIfNotExists(table, columnDef) {
+  // columnDef should be like: 'new_col INTEGER DEFAULT 0'
+  const colName = columnDef.split(/\s+/)[0];
+  const exists = await columnExists(table, colName);
+  if (!exists) {
+    await db.runStmt(`ALTER TABLE ${table} ADD COLUMN ${columnDef};`);
+    logger.info(`Added column ${colName} to ${table}`);
+  } else {
+    logger.info(`Column ${colName} already exists on ${table}, skipping`);
   }
 }
 
@@ -100,6 +124,49 @@ export async function initDatabase() {
     )
   `);
 
+    // Add new task fields for templates / hierarchy as migration-safe ALTERs
+    try {
+      // priority: 1 (high) .. 3 (low)
+      await addColumnIfNotExists('tasks', "priority INTEGER DEFAULT 2 CHECK(priority IN (1,2,3))");
+      // real delivery date when the task was actually finished
+      await addColumnIfNotExists('tasks', "real_delivery_date TEXT");
+      // parent task id for hierarchy
+      await addColumnIfNotExists('tasks', "parent_task_id INTEGER");
+      // ordering index within siblings
+      await addColumnIfNotExists('tasks', "order_index INTEGER DEFAULT 0");
+      // macro-process marker
+      await addColumnIfNotExists('tasks', "is_macro_process INTEGER DEFAULT 0");
+    } catch (err) {
+      logger.error('Failed to add migrated task columns', { err });
+      throw err;
+    }
+
+  // Weekly snapshots for task progress tracking
+  await db.runStmt(`
+    CREATE TABLE IF NOT EXISTS weekly_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id INTEGER NOT NULL,
+      project_id INTEGER NOT NULL,
+      year INTEGER NOT NULL CHECK(year >= 2020 AND year <= 2030),
+      month INTEGER NOT NULL CHECK(month >= 1 AND month <= 12),
+      week_number INTEGER NOT NULL CHECK(week_number >= 1 AND week_number <= 4),
+      planned_status TEXT NOT NULL CHECK(planned_status IN ('P','R','RP')),
+      actual_status TEXT NOT NULL CHECK(actual_status IN ('P','R','RP')),
+      planned_progress REAL DEFAULT 0 CHECK(planned_progress >= 0 AND planned_progress <= 100),
+      actual_progress REAL DEFAULT 0 CHECK(actual_progress >= 0 AND actual_progress <= 100),
+      comments TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+      UNIQUE(task_id, year, month, week_number)
+    )
+  `);
+
+  // Create indexes for weekly snapshots
+  await db.runStmt('CREATE INDEX IF NOT EXISTS idx_snapshots_project_date ON weekly_snapshots(project_id, year, month)');
+  await db.runStmt('CREATE INDEX IF NOT EXISTS idx_snapshots_task_date ON weekly_snapshots(task_id, year, month)');
+
   // User-Project assignments
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS user_projects (
@@ -127,12 +194,33 @@ export async function initDatabase() {
       FOREIGN KEY (task_id) REFERENCES tasks(id)
     )
   `);
-    logger.info('Database initialized successfully');
+
+    // Database initialization complete
+  logger.info('Database initialized successfully');
   } catch (err) {
     logger.error('Error initializing database', { err });
     throw err;
   }
 }
+
+// Transaction helper methods
+db.beginTransaction = function() {
+  return db.runAsync('BEGIN TRANSACTION');
+};
+
+db.commitTransaction = function() {
+  return db.runAsync('COMMIT');
+};
+
+db.rollbackTransaction = function() {
+  return db.runAsync('ROLLBACK');
+};
+
+// Integrity check utility
+db.checkIntegrity = async function() {
+  const res = await db.allAsync('PRAGMA integrity_check');
+  return res;
+};
 
 export async function closeDatabase() {
   return new Promise((resolve, reject) => {

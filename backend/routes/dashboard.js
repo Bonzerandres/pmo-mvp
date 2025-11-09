@@ -1,6 +1,7 @@
 import express from 'express';
 import { Alert } from '../models/Alert.js';
 import { Project } from '../models/Project.js';
+import { WeeklySnapshot } from '../models/WeeklySnapshot.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { requireRole } from '../middleware/auth.js';
 import { logger } from '../utils/logger.js';
@@ -47,6 +48,66 @@ router.get('/alerts', async (req, res, next) => {
     res.json(alerts);
   } catch (error) {
     logger.error('Get alerts error', { error });
+    next(error);
+  }
+});
+
+// Get weekly trends
+router.get('/weekly-trends', async (req, res, next) => {
+  try {
+    const { projectId, startDate, endDate } = req.query;
+    
+    let trends;
+    if (projectId) {
+      trends = await WeeklySnapshot.getWeeklySummary(parseInt(projectId));
+    } else {
+      // Get trends for all accessible projects
+      const projects = await Project.findAll();
+      trends = await Promise.all(
+        projects.map(async p => {
+          const summary = await WeeklySnapshot.getWeeklySummary(p.id);
+          return { 
+            projectId: p.id,
+            projectName: p.name,
+            ...summary
+          };
+        })
+      );
+    }
+
+    res.json(trends);
+  } catch (error) {
+    logger.error('Get weekly trends error', { error });
+    next(error);
+  }
+});
+
+// Get current week data
+router.get('/current-week', async (req, res, next) => {
+  try {
+    const { projectId } = req.query;
+    const current = WeeklySnapshot.getCurrentWeek();
+    
+    let weekData;
+    if (projectId) {
+      const project = await Project.findById(parseInt(projectId));
+      if (!project) return next(new NotFoundError('Project not found'));
+      
+      weekData = await WeeklySnapshot.getCalendarData(projectId, current);
+    } else {
+      const projects = await Project.findAll();
+      weekData = await Promise.all(
+        projects.map(async p => ({
+          projectId: p.id,
+          projectName: p.name,
+          data: await WeeklySnapshot.getCalendarData(p.id, current)
+        }))
+      );
+    }
+
+    res.json({ ...current, data: weekData });
+  } catch (error) {
+    logger.error('Get current week error', { error });
     next(error);
   }
 });

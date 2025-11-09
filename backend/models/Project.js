@@ -51,7 +51,30 @@ export class Project {
 
   static async delete(id) {
     try {
-      await db.runAsync('DELETE FROM projects WHERE id = ?', [id]);
+      // Verify project exists and get its name
+      const project = await this.findById(id);
+      if (!project) {
+        return null;
+      }
+
+      // Get task count using optimized method
+      const taskCount = await Task.getTaskCount(id);
+      logger.info('Deleting project and associated tasks', { id, name: project.name, taskCount });
+
+      // Begin transaction for atomic delete
+      await db.beginTransaction();
+
+      try {
+        // Delete project - tasks will be deleted via ON DELETE CASCADE
+        await db.runAsync('DELETE FROM projects WHERE id = ?', [id]);
+        await db.commitTransaction();
+
+        logger.info('Project deleted successfully', { id });
+        return { success: true, deletedProjectId: parseInt(id, 10), deletedTaskCount: taskCount };
+      } catch (err) {
+        await db.rollbackTransaction();
+        throw err;
+      }
     } catch (err) {
       logger.error('Project.delete failed', { err, id });
       throw err;

@@ -104,8 +104,19 @@ router.delete('/:id', idParamValidation, async (req, res, next) => {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can delete projects'));
 
     const { id } = req.params;
-    await Project.delete(id);
-    res.json({ message: 'Project deleted' });
+    // Verify project exists
+    const project = await Project.findById(id);
+    if (!project) return next(new NotFoundError('Project not found'));
+
+    // Get task count using optimized method
+    const taskCount = await Task.getTaskCount(id);
+    logger.info('Attempting project delete', { projectId: id, projectName: project.name, taskCount, userId: req.user.id });
+
+    const result = await Project.delete(id);
+    if (!result) return next(new NotFoundError('Project not found'));
+
+    // Return deletion details
+    res.json({ message: 'Project deleted successfully', projectId: parseInt(id, 10), deletedTasks: result.deletedTaskCount || taskCount });
   } catch (error) {
     logger.error('Delete project error', { error });
     next(error);

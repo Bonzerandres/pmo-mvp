@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDatabase, closeDatabase } from './database.js';
 import authRoutes from './routes/auth.js';
 import projectsRoutes from './routes/projects.js';
@@ -10,21 +11,49 @@ import { requestLogger } from './middleware/requestLogger.js';
 import expressErrorHandler from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 
-// Load backend env explicitly
-dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
+
+// __dirname workaround for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load backend env explicitly (stable path)
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
+
+// For static serving (if needed)
+const staticDir = path.resolve(__dirname, '../frontend/dist');
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+// Dynamic CORS origin from env
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+app.use(cors({
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed from origin: ' + origin), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+logger.info('CORS allowed origins:', allowedOrigins);
 app.use(express.json());
 app.use(requestLogger);
+
+import calendarRoutes from './routes/calendar.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -50,8 +79,8 @@ async function startServer() {
     await initDatabase();
     logger.info('Database initialized');
 
-    server = app.listen(PORT, () => {
-      logger.info(`Server running on http://localhost:${PORT}`);
+    server = app.listen(PORT, '0.0.0.0', () => {
+      logger.info(`Server running on http://0.0.0.0:${PORT}`);
     });
 
     // Graceful shutdown handlers
@@ -62,11 +91,15 @@ async function startServer() {
           server.close(() => logger.info('HTTP server closed'));
         }
         await closeDatabase();
-        logger.info('Shutdown complete, exiting');
-        process.exit(0);
+        logger.info('Shutdown complete');
+        if (signal === 'FORCE') {
+          process.exit(0);
+        }
       } catch (err) {
         logger.error('Error during shutdown', { err });
-        process.exit(1);
+        if (signal === 'FORCE') {
+          process.exit(1);
+        }
       }
     };
 
@@ -83,14 +116,19 @@ async function startServer() {
       shutdown('uncaughtException');
     });
 
-    // mount global error handler last
-    app.use(expressErrorHandler);
-
   } catch (error) {
     logger.error('Failed to start server', { error });
     process.exit(1);
   }
 }
+
+// Add catch-all 404 route
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// mount global error handler last
+app.use(expressErrorHandler);
 
 startServer();
 
