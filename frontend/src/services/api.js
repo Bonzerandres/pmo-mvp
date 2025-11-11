@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -66,7 +66,44 @@ export const dashboardAPI = {
     const url = projectId ? `/dashboard/alerts?projectId=${projectId}` : '/dashboard/alerts';
     return api.get(url);
   },
-  getPortfolioSummary: () => api.get('/dashboard/portfolio-summary')
+  getPortfolioSummary: () => api.get('/dashboard/portfolio-summary'),
+  /**
+   * Fetches weekly trends and current week summary for dashboard analytics.
+   * getWeeklyTrends: params => {projectId, startDate, endDate}
+   * getCurrentWeek: params => {projectId}
+   */
+  getWeeklyTrends: (params) => api.get('/dashboard/weekly-trends', { params }),
+  getCurrentWeek: () => api.get('/dashboard/current-week')
+};
+
+export const calendarAPI = {
+  // Get calendar grid data with optional date range
+  getCalendarData: (projectId, params) => 
+    api.get(`/calendar/projects/${projectId}/calendar`, { params }),
+
+  // Get weekly summary for specific project and week
+  getWeeklySummary: (projectId, params) => 
+    api.get(`/calendar/projects/${projectId}/calendar/summary`, { params }),
+
+  // Get snapshots for a specific task
+  getTaskSnapshots: (projectId, taskId, params) =>
+    api.get(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, { params }),
+
+  // Create or update weekly snapshot
+  createSnapshot: (projectId, taskId, data) =>
+    api.post(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, data),
+
+  // Update existing snapshot
+  updateSnapshot: (id, data) =>
+    api.put(`/calendar/snapshots/${id}`, data),
+
+  // Delete snapshot (Admin only)
+  deleteSnapshot: (id) =>
+    api.delete(`/calendar/snapshots/${id}`),
+
+  // Bulk create/update snapshots
+  bulkCreateSnapshots: (projectId, data) =>
+    api.post(`/calendar/projects/${projectId}/snapshots/bulk`, data)
 };
 
 export default api;

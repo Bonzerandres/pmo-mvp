@@ -1,14 +1,22 @@
 {
   "name": "pmo-system",
   "version": "1.0.0",
-  "description": "Sistema de Gestión de Portafolio de Proyectos (PMO)",
+  "description": "Sistema de Gestión de Portafolio de Proyectos (PMO) - now with Docker support",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "build": "cd frontend && npm run build"
+  "build": "cd frontend && npm run build",
+  "docker:build": "docker-compose build",
+  "docker:up": "docker-compose up -d",
+  "docker:down": "docker-compose down",
+  "docker:logs": "docker-compose logs -f",
+  "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+  "docker:dev:build": "docker-compose -f docker-compose.dev.yml up --build",
+  "docker:restart": "docker-compose restart",
+  "docker:clean": "docker-compose down -v"
   },
   "keywords": ["pmo", "project-management", "portfolio"],
   "author": "",

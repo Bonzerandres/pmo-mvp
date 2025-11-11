@@ -1,3 +1,125 @@
+## Troubleshooting - Changes Not Appearing
+
+**Problem:** You've made code changes but the browser still shows the old version.
+
+**Solution Steps:**
+
+**1. Clear Vite Cache:**
+```powershell
+cd frontend
+Remove-Item -Recurse -Force .\node_modules\.vite
+# Or use: npx vite --force
+```
+
+**2. Clear Browser Cache:**
+- **Chrome/Edge:** Press Ctrl+Shift+Delete, select "Cached images and files", click Clear
+- **Firefox:** Press Ctrl+Shift+Delete, select "Cache", click Clear Now
+- **Or:** Hard refresh with Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
+
+**3. Restart Dev Server:**
+```powershell
+# Stop the server (Ctrl+C)
+cd frontend
+npm run dev
+```
+
+**4. Open in Incognito/Private Window:**
+- Chrome: Ctrl+Shift+N
+- Firefox: Ctrl+Shift+P
+- This bypasses all cache and extensions
+
+**5. Verify Correct URL:**
+- Dev server: http://localhost:5173
+- NOT: http://localhost:3001 (that's the backend)
+- Check the terminal output for the correct URL
+
+**6. Check Dev Server Is Running:**
+```powershell
+# In frontend directory, you should see:
+npm run dev
+# Output: VITE v5.x.x ready in XXX ms
+# ➜ Local: http://localhost:5173/
+```
+
+**7. Disable Browser Extensions:**
+- Some extensions (ad blockers, privacy tools) can cache aggressively
+- Test in incognito mode to rule this out
+
+**8. Check for Multiple Tabs:**
+- Close all browser tabs with the app open
+- Open a fresh tab and navigate to http://localhost:5173
+
+**9. Verify File Changes Were Saved:**
+- Check the file modification timestamp in your editor
+- Look for unsaved indicators (dot/asterisk in tab title)
+- Save all files: Ctrl+K S (VS Code) or Ctrl+S (most editors)
+
+**10. Check Terminal for Errors:**
+- Look for compilation errors in the terminal running `npm run dev`
+- Vite will show errors if components fail to compile
+- Fix any errors before expecting changes to appear
+
+**Prevention:**
+- Always use `npm run dev` for development (not `npm run build`)
+- Keep dev server running while making changes (Vite hot-reloads automatically)
+- Use browser DevTools Network tab to verify files are being fetched (not cached)
+- Add `?v=timestamp` to URL to force cache bypass: http://localhost:5173/?v=123456
+
+**Still Not Working?**
+- Delete `node_modules/` and reinstall: `rm -rf node_modules && npm install`
+- Check if you're editing the correct file (search for unique text to confirm)
+- Verify you're in the correct project directory
+- Check if another instance of the dev server is running on a different port
+## PMO MVP: Executive Dashboard & Analytics Architecture
+
+### 🏛️ Executive Dashboard (`/`)
+- **Purpose:** At-a-glance portfolio health for executives (CEO, CTO, Admin)
+- **Content:**
+  - 6 KPI cards (Total Projects, Completed, Delayed, Average Progress, Delay Days, High Priority)
+  - Alerts center with severity filtering
+  - **Pie chart** showing task status distribution (Completado, En Curso, Retrasado, Crítico)
+  - Portfolio summary table with project-level metrics and deviation calculations
+- **What it does NOT contain:** No bar charts, no weekly trends, no time-series or S1-S4 week tracking
+- **Update Frequency:** Auto-refreshes every 30 seconds
+- **Interaction:** Read-only, no editing capabilities
+- **File:** `frontend/src/components/Dashboard.jsx`
+
+### 📈 Weekly Trends (`/weekly-trends`)
+- **Purpose:** Analytical tool for tracking progress trends over time (for analysts, PMs)
+- **Content:**
+  - **Line chart** showing "Avance Programado" and "Avance Real" trends over multiple weeks
+  - Current week summary cards (S1-S4) with project-level details
+  - Weekly deviation tracking and status indicators
+- **Update Frequency:** Auto-refreshes every 30 seconds
+- **Interaction:** Editable/configurable ("Editable" badge in navigation)
+- **File:** `frontend/src/components/WeeklyTrends.jsx`
+
+### 🔑 Key Differences
+| Aspect      | Dashboard (/)         | Weekly Trends (/weekly-trends) |
+|-------------|-----------------------|-------------------------------|
+| View Type   | Snapshot (current)    | Time-series (historical)      |
+| Chart Type  | Pie chart             | Line chart                    |
+| Time Scope  | Current moment        | Multiple weeks (S1-S4)        |
+| Purpose     | Executive summary     | Detailed analysis             |
+| Editing     | No                    | Yes (configurable)            |
+| Navigation  | Main section          | "Análisis" section           |
+
+**Note:** Weekly trends and line charts are never shown on the Dashboard. The Dashboard is a clean executive summary only.
+
+### 🧭 Navigation & Access
+- Dashboard: Click "Dashboard" in sidebar or go to http://localhost:5173/
+- Weekly Trends: Click "Tendencias Semanales" in sidebar (under "Análisis") or go to http://localhost:5173/weekly-trends
+
+### 💡 Design Philosophy
+- Keep Dashboard uncluttered and focused on key metrics
+- Move analytics and trends to dedicated, visually separated sections
+- Prevent information overload for executives
+- Follow best practices for dashboard design (summary vs detail)
+
+---
+# ⚠️ VITE_API_URL and LAN Access
+
+By default, VITE_API_URL is set to http://localhost:3001/api. This works for same-machine access. For LAN access, rebuild the frontend with VITE_API_URL set to your host IP (e.g., http://192.168.1.160:3001/api), or use a reverse proxy to serve both frontend and backend on the same origin. See DEPLOYMENT.md for details.
 # Sistema de Gestión de Portafolio de Proyectos (PMO)
 
 Sistema completo de gestión de portafolio de proyectos que reemplaza la gestión manual mediante archivos Excel con una solución web centralizada en tiempo real.
@@ -54,9 +176,103 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
+
+
 El sistema estará disponible en:
-- **Frontend**: http://localhost:3000
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3001
+
+## 🐳 Docker Deployment
+
+### Quick Start with Docker Compose
+
+1. Prerequisites: Docker and Docker Compose installed
+2. Run: `docker-compose up -d`
+3. Access URLs:
+  - Frontend: http://localhost:5173
+  - Backend API: http://localhost:3001
+4. Stop: `docker-compose down`
+5. Logs: `docker-compose logs -f`
+
+### Development with Docker
+
+- Run: `docker-compose -f docker-compose.dev.yml up`
+- Hot-reload enabled, source code mounted as volumes
+- Rebuild after dependency changes: `docker-compose -f docker-compose.dev.yml up --build`
+
+### Production Deployment
+
+1. Copy `.env.example` files and set production values (especially `JWT_SECRET`)
+2. Update `CORS_ORIGIN` in `backend/.env` to include your production domain
+3. Update `VITE_API_URL` in `frontend/.env.production` before building
+4. Database persistence: see `backend/data/` volume mount
+5. SSL/TLS: use a reverse proxy (nginx, Caddy, Traefik) for HTTPS
+
+### Accessing from Other Devices
+
+**Local Network Access**:
+1. Find your machine's IP address:
+  - Windows: `ipconfig` (look for IPv4 Address)
+  - Linux/Mac: `ip addr` or `ifconfig`
+2. Access from other devices on the same network:
+  - Frontend: `http://<your-ip>:5173`
+  - Backend API: `http://<your-ip>:3001/api`
+3. **Firewall**: Ensure ports 3001 and 5173 are allowed in your firewall
+  - Windows: `netsh advfirewall firewall add rule name="PMO Backend" dir=in action=allow protocol=TCP localport=3001`
+  - Windows: `netsh advfirewall firewall add rule name="PMO Frontend" dir=in action=allow protocol=TCP localport=5173`
+
+**Remote Server Deployment**:
+1. Deploy Docker containers on your server
+2. Configure firewall/security groups to allow ports 3001 and 5173
+3. Update `CORS_ORIGIN` to include your server's IP or domain
+4. Use a reverse proxy for production (see `nginx.conf.example`)
+5. Set up SSL certificates (Let's Encrypt recommended)
+
+## 🐳 Docker Deployment
+
+### Quick Start with Docker Compose
+
+1. Prerequisites: Docker and Docker Compose installed
+2. Run: `docker-compose up -d`
+3. Access URLs:
+  - Frontend: http://localhost:5173
+  - Backend API: http://localhost:3001
+4. Stop: `docker-compose down`
+5. Logs: `docker-compose logs -f`
+
+### Development with Docker
+
+- Run: `docker-compose -f docker-compose.dev.yml up`
+- Hot-reload enabled, source code mounted as volumes
+- Rebuild after dependency changes: `docker-compose -f docker-compose.dev.yml up --build`
+
+### Production Deployment
+
+1. Copy `.env.example` files and set production values (especially `JWT_SECRET`)
+2. Update `CORS_ORIGIN` in `backend/.env` to include your production domain
+3. Update `VITE_API_URL` in `frontend/.env.production` before building
+4. Database persistence: see `backend/data/` volume mount
+5. SSL/TLS: use a reverse proxy (nginx, Caddy, Traefik) for HTTPS
+
+### Accessing from Other Devices
+
+**Local Network Access**:
+1. Find your machine's IP address:
+  - Windows: `ipconfig` (look for IPv4 Address)
+  - Linux/Mac: `ip addr` or `ifconfig`
+2. Access from other devices on the same network:
+  - Frontend: `http://<your-ip>:5173`
+  - Backend API: `http://<your-ip>:3001/api`
+3. **Firewall**: Ensure ports 3001 and 5173 are allowed in your firewall
+  - Windows: `netsh advfirewall firewall add rule name="PMO Backend" dir=in action=allow protocol=TCP localport=3001`
+  - Windows: `netsh advfirewall firewall add rule name="PMO Frontend" dir=in action=allow protocol=TCP localport=5173`
+
+**Remote Server Deployment**:
+1. Deploy Docker containers on your server
+2. Configure firewall/security groups to allow ports 3001 and 5173
+3. Update `CORS_ORIGIN` to include your server's IP or domain
+4. Use a reverse proxy for production (see `nginx.conf.example`)
+5. Set up SSL certificates (Let's Encrypt recommended)
 
 ## 👥 Usuarios de Prueba
 
@@ -86,7 +302,7 @@ El sistema viene con 6 proyectos pre-configurados:
 ### CEO/CTO
 - Dashboard ejecutivo con KPIs en tiempo real
 - Centro de alertas automáticas
-- Visualizaciones (gráficos de barras y pie)
+- Visualización (gráfico de pie)
 - Tabla completa del portafolio
 - **Solo lectura** - No pueden editar proyectos
 

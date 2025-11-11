@@ -46,9 +46,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
+    console.log('API URL:', import.meta.env.VITE_API_URL || '/api');
+    console.log('Attempting login for user:', username);
     try {
       const response = await authAPI.login(username, password);
       const { token, user } = response.data;
+      console.log('Login successful, received token and user data');
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -56,10 +59,22 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Error al iniciar sesión'
-      };
+      console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Status code:', error.response?.status);
+
+      let errorMessage = 'Error al iniciar sesión';
+      if (error.response?.status === 500) {
+        errorMessage = 'Error del servidor. Verifica que el backend esté ejecutándose.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Credenciales inválidas';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Tiempo de espera agotado. Verifica la conexión.';
+      } else if (!error.response) {
+        errorMessage = 'No se puede conectar al servidor. Verifica que el backend esté ejecutándose en http://localhost:3001';
+      }
+
+      return { success: false, error: errorMessage };
     }
   };
 

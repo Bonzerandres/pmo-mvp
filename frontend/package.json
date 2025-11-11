@@ -4,26 +4,36 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:fresh": "npm run clean && vite --force",
     "build": "vite build",
-    "preview": "vite preview"
+    "build:fresh": "npm run clean && vite build --force",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "clean": "node -e \"try{require('fs').rmSync('node_modules/.vite',{recursive:true,force:true})}catch(e){} try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\"",
+    "reset": "npm run clean && npm install"
   },
   "dependencies": {
+    "axios": "^1.6.2",
+    "date-fns": "^2.30.0",
+    "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
-    "axios": "^1.6.2",
-    "recharts": "^2.10.3",
-    "lucide-react": "^0.294.0",
-    "date-fns": "^2.30.0"
+    "recharts": "^2.10.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.0.1",
+    "@testing-library/react": "^14.0.0",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
+    "@vitejs/plugin-react": "^4.3.0",
     "autoprefixer": "^10.4.16",
+    "jsdom": "^22.1.0",
+    "patch-package": "^8.0.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vitest": "^0.34.2"
   }
 }
-

@@ -4,10 +4,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './context/ToastContext';
 import Login from './components/Login';
+
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Projects from './components/Projects';
 import ProjectDetail from './components/ProjectDetail';
+import WeeklyTrends from './components/WeeklyTrends';
+import ProjectImplementationTracker from './components/ProjectImplementationTracker';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -37,6 +40,26 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               {canAccessDashboard ? <Dashboard /> : <Navigate to="/projects" />}
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/bi/weekly-trends"
+        element={
+          <PrivateRoute>
+            <Layout>
+              {canAccessDashboard ? <WeeklyTrends /> : <Navigate to="/projects" />}
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/progress-tracker"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <ProjectImplementationTracker />
             </Layout>
           </PrivateRoute>
         }

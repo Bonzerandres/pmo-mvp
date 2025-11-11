@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { projectsAPI } from '../services/api';
-import { FolderKanban, Edit, Eye, RefreshCw } from 'lucide-react';
+import { FolderKanban, Edit, Eye, RefreshCw, Plus, Trash2, BarChart3 } from 'lucide-react';
+import CreateProjectModal from './CreateProjectModal';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const toast = useToast();
+  const { user } = useAuth();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadProjects();
@@ -21,6 +32,40 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteClick = (project, e) => {
+    if (e) e.stopPropagation();
+    setProjectToDelete(project);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!projectToDelete) return;
+    setDeleting(true);
+    try {
+      const res = await projectsAPI.delete(projectToDelete.id);
+      toast.showSuccess(res?.data?.message || 'Proyecto eliminado correctamente');
+      setShowDeleteModal(false);
+      setProjectToDelete(null);
+      setLoading(true);
+      await loadProjects();
+    } catch (err) {
+      console.error('Error deleting project', err);
+      const msg = err?.response?.data?.message || err?.message || 'Error al eliminar el proyecto';
+      toast.showError(msg);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleProjectCreated = async () => {
+    // Parent handles toast and dataset refresh per review comment
+    toast.showSuccess('Proyecto creado exitosamente');
+    setLoading(true);
+    await loadProjects();
+    setShowCreateModal(false);
+    setLoading(false);
   };
 
   if (loading) {
@@ -38,15 +83,25 @@ export default function Projects() {
           <h1 className="text-3xl font-bold text-neutral-900">Mis Proyectos</h1>
           <p className="text-sm text-neutral-600 mt-1">Gestiona y monitorea tus proyectos asignados</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={loadProjects}
-            className="px-4 py-2 bg-brand-600 text-white rounded-md shadow-sm hover:bg-brand-700 transition duration-200"
-          >
-            <RefreshCw className="w-4 h-4 mr-2 inline" />
-            Actualizar
-          </button>
-        </div>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={async () => { setLoading(true); await loadProjects(); toast.showInfo('Actualizando proyectos'); }}
+              className="px-4 py-2 bg-brand-600 text-white rounded-md shadow-sm hover:bg-brand-700 transition duration-200 flex items-center"
+            >
+              <RefreshCw className="w-4 h-4 mr-2 inline" />
+              Actualizar
+            </button>
+
+            {user?.role === 'Admin' && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-success-600 text-white rounded-md shadow-sm hover:bg-success-700 transition duration-200 flex items-center"
+              >
+                <Plus className="w-4 h-4 mr-2 inline" />
+                Crear Proyecto
+              </button>
+            )}
+          </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -54,7 +109,9 @@ export default function Projects() {
           <ProjectCard
             key={project.id}
             project={project}
+            user={user}
             onView={() => navigate(`/projects/${project.id}`)}
+            onDeleteClick={(e) => handleDeleteClick(project, e)}
           />
         ))}
       </div>
@@ -66,15 +123,30 @@ export default function Projects() {
           </div>
           <p className="text-neutral-600">No tienes proyectos asignados</p>
           <div className="mt-4">
-            <button className="px-4 py-2 bg-brand-600 text-white rounded-md">Solicitar acceso</button>
+            {user?.role === 'Admin' ? (
+              <button onClick={() => setShowCreateModal(true)} className="px-4 py-2 bg-success-600 text-white rounded-md">Crear Proyecto</button>
+            ) : (
+              <button className="px-4 py-2 bg-brand-600 text-white rounded-md">Solicitar acceso</button>
+            )}
           </div>
         </div>
       )}
+
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setProjectToDelete(null); }}
+        onConfirm={handleDeleteConfirm}
+        projectName={projectToDelete?.name}
+        taskCount={projectToDelete?.tasks?.length || 0}
+        isDeleting={deleting}
+      />
+
+      <CreateProjectModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} onSuccess={handleProjectCreated} />
     </div>
   );
 }
 
-function ProjectCard({ project, onView }) {
+function ProjectCard({ project, onView, user, onDeleteClick }) {
   const totalTasks = project.tasks?.length || 0;
   const completedTasks = project.tasks?.filter(t => t.status === 'Completado').length || 0;
   const criticalTasks = project.tasks?.filter(t => t.status === 'Crítico').length || 0;
@@ -86,7 +158,7 @@ function ProjectCard({ project, onView }) {
     : 0;
 
   return (
-    <div className="card-elevated p-8 hover:shadow-card-md transform transition-all duration-200">
+    <div className="card-elevated p-8 hover:shadow-card-md transform transition-all duration-200 relative">
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h3 className="text-xl font-bold text-neutral-900 mb-1 truncate">{project.name}</h3>
@@ -96,6 +168,16 @@ function ProjectCard({ project, onView }) {
           <span className="px-3 py-1 bg-danger-50 text-danger-600 rounded-full text-sm font-semibold animate-pulse">
             {criticalTasks} crítico{criticalTasks > 1 ? 's' : ''}
           </span>
+        )}
+        {user?.role === 'Admin' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onDeleteClick && onDeleteClick(e); }}
+            aria-label="Eliminar proyecto"
+            className="absolute top-4 right-4 delete-button-icon-only"
+            title="Eliminar proyecto"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         )}
       </div>
 
@@ -131,13 +213,22 @@ function ProjectCard({ project, onView }) {
         </div>
       </div>
 
-      <button
-        onClick={onView}
-        className="w-full mt-4 px-6 py-3 bg-brand-600 text-white rounded-md hover:bg-brand-700 hover:shadow-md flex items-center justify-center transition duration-200"
-      >
-        <Eye className="w-4 h-4 mr-2" />
-        Ver Detalles
-      </button>
+      <div className="flex gap-2 mt-4">
+        <button
+          onClick={onView}
+          className="flex-1 px-6 py-3 bg-brand-600 text-white rounded-md hover:bg-brand-700 hover:shadow-md flex items-center justify-center transition duration-200"
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          Ver Detalles
+        </button>
+        <button
+          onClick={() => navigate(`/progress-tracker?projectId=${project.id}`)}
+          className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 hover:shadow-md flex items-center justify-center transition duration-200"
+        >
+          <BarChart3 className="w-4 h-4 mr-2" />
+          Avance
+        </button>
+      </div>
     </div>
   );
 }

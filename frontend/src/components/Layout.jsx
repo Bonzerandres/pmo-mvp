@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FolderKanban, UserCircle } from 'lucide-react';
+import { LogOut, LayoutDashboard, FolderKanban, UserCircle, TrendingUp, BarChart3, PieChart } from 'lucide-react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -15,6 +15,9 @@ export default function Layout({ children }) {
 
   const isDashboard = location.pathname === '/';
   const isProjects = location.pathname.startsWith('/projects');
+  const isWeeklyTrends = location.pathname === '/weekly-trends';
+  const isProgressTracker = location.pathname === '/progress-tracker';
+  const isBI = location.pathname.startsWith('/bi');
 
   const canAccessDashboard = ['CEO', 'CTO', 'Admin'].includes(user?.role);
   const canAccessProjects = user?.role === 'PM' || user?.role === 'Admin';
@@ -44,31 +47,72 @@ export default function Layout({ children }) {
         <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
           <ul className="space-y-1">
             {canAccessDashboard && (
-              <li>
-                <Link
-                  to="/"
-                  className={`sidebar-nav-item ${isDashboard ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
-                  aria-current={isDashboard ? 'page' : undefined}
-                  aria-label="Dashboard"
-                >
-                  <LayoutDashboard className="w-5 h-5 mr-3 text-brand-600" />
-                  Dashboard
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link
+                    to="/"
+                    className={`sidebar-nav-item ${isDashboard ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
+                    aria-current={isDashboard ? 'page' : undefined}
+                    aria-label="Dashboard"
+                  >
+                    <LayoutDashboard className="w-5 h-5 mr-3 text-brand-600" />
+                    <div className="flex flex-col">
+                      <span>Dashboard</span>
+                      <span className="nav-link-subtitle">Resumen ejecutivo</span>
+                    </div>
+                  </Link>
+                </li>
+                  {/* BI Dashboards Section */}
+                  <li className="nav-section-divider" role="separator" aria-hidden="true">
+                    <PieChart className="w-4 h-4 mr-2 text-indigo-400" />
+                    Dashboards & BI
+                  </li>
+                  <li>
+                    <Link
+                      to="/bi/weekly-trends"
+                      className={`sidebar-nav-item-analytics border-l-2 border-indigo-300 pl-3 ${isBI ? 'bg-indigo-50 border-l-4 border-indigo-600 text-neutral-900' : 'text-neutral-700'}`}
+                      aria-current={isBI ? 'page' : undefined}
+                      aria-label="Dashboards y BI"
+                    >
+                      <div className="flex flex-col">
+                        <div className="flex items-center">
+                          <TrendingUp className="w-5 h-5 mr-3 text-indigo-600" />
+                          Tendencias Semanales
+                          <span className="nav-badge-analytics ml-2"><TrendingUp className="w-3 h-3 mr-1" />BI</span>
+                        </div>
+                        <span className="nav-link-subtitle">Dashboards y Analítica</span>
+                      </div>
+                    </Link>
+                  </li>
+              </>
             )}
 
             {canAccessProjects && (
-              <li>
-                <Link
-                  to="/projects"
-                  className={`sidebar-nav-item ${isProjects ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
-                  aria-current={isProjects ? 'page' : undefined}
-                  aria-label="Mis Proyectos"
-                >
-                  <FolderKanban className="w-5 h-5 mr-3 text-brand-600" />
-                  Mis Proyectos
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link
+                    to="/projects"
+                    className={`sidebar-nav-item ${isProjects ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
+                    aria-current={isProjects ? 'page' : undefined}
+                    aria-label="Mis Proyectos"
+                  >
+                    <FolderKanban className="w-5 h-5 mr-3 text-brand-600" />
+                    Mis Proyectos
+                  </Link>
+                </li>
+                  {/* Analytics Section Divider */}
+                <li>
+                  <Link
+                    to="/progress-tracker"
+                    className={`sidebar-nav-item ${isProgressTracker ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
+                    aria-current={isProgressTracker ? 'page' : undefined}
+                    aria-label="Avance de Tareas"
+                  >
+                    <BarChart3 className="w-5 h-5 mr-3 text-brand-600" />
+                    Avance de Tareas
+                  </Link>
+                </li>
+              </>
             )}
           </ul>
         </nav>

@@ -1,0 +1,63 @@
+# Example nginx configuration for PMO MVP production deployment
+#
+# - Serves frontend on 80/443
+# - Proxies /api/ to backend
+# - SSL termination, security headers, gzip, caching, rate limiting
+
+upstream backend {
+    server 127.0.0.1:3001;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+    add_header X-XSS-Protection "1; mode=block";
+    add_header Referrer-Policy "no-referrer-when-downgrade";
+
+    location /api/ {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        # Rate limiting
+        limit_req zone=api burst=10 nodelay;
+    }
+
+    location / {
+        root /var/www/frontend;
+        try_files $uri $uri/ /index.html;
+        # Caching
+        location ~* \.(?:css|js|jpg|jpeg|gif|png|ico|svg|woff2?)$ {
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+        }
+        location ~* \.(?:html)$ {
+            expires -1;
+            add_header Cache-Control "no-store, must-revalidate";
+        }
+    }
+
+    # Rate limit zone
+    limit_req_zone $binary_remote_addr zone=api:10m rate=5r/s;
+}

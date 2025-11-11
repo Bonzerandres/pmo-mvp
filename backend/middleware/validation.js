@@ -1,4 +1,4 @@
-import { body, param, validationResult } from 'express-validator';
+import { body, param, query, validationResult } from 'express-validator';
 
 export const loginValidation = [
   body('username').isString().isLength({ min: 3, max: 50 }).trim(),
@@ -96,13 +96,13 @@ export const snapshotUpdateValidation = [
 ];
 
 export const calendarQueryValidation = [
-  body('startYear').optional().isInt({ min: 2020, max: 2030 }).withMessage('Start year must be between 2020 and 2030'),
-  body('startMonth').optional().isInt({ min: 1, max: 12 }).withMessage('Start month must be between 1 and 12'),
-  body('endYear').optional().isInt({ min: 2020, max: 2030 }).withMessage('End year must be between 2020 and 2030'),
-  body('endMonth').optional().isInt({ min: 1, max: 12 }).withMessage('End month must be between 1 and 12'),
-  body('year').optional().isInt({ min: 2020, max: 2030 }).withMessage('Year must be between 2020 and 2030'),
-  body('month').optional().isInt({ min: 1, max: 12 }).withMessage('Month must be between 1 and 12'),
-  body('week').optional().isInt({ min: 1, max: 4 }).withMessage('Week must be between 1 and 4'),
+  query('startYear').optional().isInt({ min: 2020, max: 2030 }).withMessage('Start year must be between 2020 and 2030'),
+  query('startMonth').optional().isInt({ min: 1, max: 12 }).withMessage('Start month must be between 1 and 12'),
+  query('endYear').optional().isInt({ min: 2020, max: 2030 }).withMessage('End year must be between 2020 and 2030'),
+  query('endMonth').optional().isInt({ min: 1, max: 12 }).withMessage('End month must be between 1 and 12'),
+  query('year').optional().isInt({ min: 2020, max: 2030 }).withMessage('Year must be between 2020 and 2030'),
+  query('month').optional().isInt({ min: 1, max: 12 }).withMessage('Month must be between 1 and 12'),
+  query('week').optional().isInt({ min: 1, max: 4 }).withMessage('Week must be between 1 and 4'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });

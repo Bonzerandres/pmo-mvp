@@ -197,15 +197,15 @@ export class WeeklySnapshot {
       const summary = await db.getAsync(query, params);
 
       return {
-        totalTasks: summary.total_tasks,
-        completedTasks: summary.completed_tasks,
-        averagePlannedProgress: Math.round((summary.avg_planned_progress || 0) * 100) / 100,
-        averageActualProgress: Math.round((summary.avg_actual_progress || 0) * 100) / 100,
-        deviation: Math.round(((summary.avg_actual_progress || 0) - (summary.avg_planned_progress || 0)) * 100) / 100,
+        totalTasks: Number(summary.total_tasks) || 0,
+        completedTasks: Number(summary.completed_tasks) || 0,
+        averagePlannedProgress: Math.round((Number(summary.avg_planned_progress) || 0) * 100) / 100,
+        averageActualProgress: Math.round((Number(summary.avg_actual_progress) || 0) * 100) / 100,
+        deviation: Math.round(((Number(summary.avg_actual_progress) || 0) - (Number(summary.avg_planned_progress) || 0)) * 100) / 100,
         statusCounts: {
-          programado: summary.status_p_count,
-          real: summary.status_r_count,
-          reprogramado: summary.status_rp_count
+          programado: Number(summary.status_p_count) || 0,
+          real: Number(summary.status_r_count) || 0,
+          reprogramado: Number(summary.status_rp_count) || 0
         }
       };
     } catch (err) {

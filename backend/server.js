@@ -7,10 +7,10 @@ import { initDatabase, closeDatabase } from './database.js';
 import authRoutes from './routes/auth.js';
 import projectsRoutes from './routes/projects.js';
 import dashboardRoutes from './routes/dashboard.js';
+import calendarRoutes from './routes/calendar.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import expressErrorHandler from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
-
 
 // __dirname workaround for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -46,8 +46,6 @@ app.use(cors({
 logger.info('CORS allowed origins:', allowedOrigins);
 app.use(express.json());
 app.use(requestLogger);
-
-import calendarRoutes from './routes/calendar.js';
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -121,6 +119,7 @@ async function startServer() {
     process.exit(1);
   }
 }
+
 
 // Add catch-all 404 route
 app.use((req, res) => {

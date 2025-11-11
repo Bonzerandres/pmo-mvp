@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../services/api';
-import { AlertCircle, TrendingUp, Clock, CheckCircle, AlertTriangle, BarChart3, RefreshCw } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AlertCircle, Clock, CheckCircle, AlertTriangle, RefreshCw, Info, TrendingUp } from 'lucide-react';
+import ProgressTooltip from './ProgressTooltip';
+import ProgressBar from './ProgressBar';
+import { useToast } from '../context/ToastContext';
+
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
@@ -10,7 +13,11 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState([]);
   const [portfolioSummary, setPortfolioSummary] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [filter, setFilter] = useState('all'); // all, high, medium
+  const toast = useToast();
+
 
   useEffect(() => {
     loadData();
@@ -20,7 +27,11 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [kpisData, alertsData, summaryData] = await Promise.all([
+      const [
+        kpisData, 
+        alertsData, 
+        summaryData
+      ] = await Promise.all([
         dashboardAPI.getKPIs(),
         dashboardAPI.getAlerts(),
         dashboardAPI.getPortfolioSummary()
@@ -29,10 +40,14 @@ export default function Dashboard() {
       setKpis(kpisData.data);
       setAlerts(alertsData.data);
       setPortfolioSummary(summaryData.data);
+      setLastUpdated(new Date());
+      toast.showSuccess('Datos actualizados');
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      toast.showError('Error al cargar datos');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -40,24 +55,7 @@ export default function Dashboard() {
     ? alerts 
     : alerts.filter(a => a.severity === filter);
 
-  const statusDistribution = portfolioSummary.reduce((acc, project) => {
-    Object.entries(project.statusCount).forEach(([status, count]) => {
-      acc[status] = (acc[status] || 0) + count;
-    });
-    return acc;
-  }, {});
-
-  const pieData = Object.entries(statusDistribution).map(([name, value]) => ({
-    name,
-    value
-  }));
-
-  const barData = portfolioSummary.map(project => ({
-    name: project.name.length > 15 ? project.name.substring(0, 15) + '...' : project.name,
-    'Avance Programado': project.plannedProgress,
-    'Avance Real': project.actualProgress
-  }));
-
+  // Pie chart and analytics removed for executive-only dashboard
   if (loading) {
     return (
       <div className="space-y-6">
@@ -90,21 +88,29 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-neutral-900">Dashboard Ejecutivo</h1>
           <p className="text-sm text-neutral-600 mt-1">Vista general del portafolio de proyectos</p>
         </div>
-        <button
-          onClick={loadData}
-          className="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-md shadow-sm hover:bg-brand-700 transition duration-200"
-        >
-          <svg className="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v6h6M20 20v-6h-6"/></svg>
-          Actualizar
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={async () => { setRefreshing(true); await loadData(); toast.showInfo('Actualizando datos'); }}
+            disabled={refreshing}
+            className={`inline-flex items-center px-4 py-2 rounded-md shadow-sm transition duration-200 ${refreshing ? 'bg-neutral-200 text-neutral-600' : 'bg-brand-600 text-white hover:bg-brand-700'}`}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            {refreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+
+          {lastUpdated && (
+            <div className="text-xs text-neutral-500">Última actualización: {lastUpdated.toLocaleTimeString()}</div>
+          )}
+        </div>
       </div>
 
-      {/* KPIs */}
+
+      {/* KPIs - 6 card grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard
           title="Total de Proyectos"
           value={kpis?.totalProjects || 0}
-          icon={<BarChart3 className="w-8 h-8" />}
+          icon={<CheckCircle className="w-8 h-8" />}
           color="blue"
         />
         <KPICard
@@ -213,50 +219,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Avance Programado vs Real
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Avance Programado" fill="#3b82f6" />
-              <Bar dataKey="Avance Real" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Distribución por Estado
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
       {/* Portfolio Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -274,13 +237,10 @@ export default function Dashboard() {
                   Categoría
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avance Programado
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avance Real
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Desviación
+                  <div className="flex items-center space-x-2">
+                    <span>Desviación</span>
+                    <ProgressTooltip content={<div>Desviación = Real - Programado</div>}><Info className="w-4 h-4 text-neutral-400"/></ProgressTooltip>
+                  </div>
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tareas
@@ -298,17 +258,11 @@ export default function Dashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.plannedProgress.toFixed(1)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.actualProgress.toFixed(1)}%
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      deviation < -10 ? 'text-red-600' : deviation < 0 ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
-                    </td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                          deviation < -10 ? 'bg-red-50 text-red-700 rounded-md px-2 py-1' : deviation < 0 ? 'bg-yellow-50 text-yellow-700 rounded-md px-2 py-1' : 'bg-green-50 text-green-700 rounded-md px-2 py-1'
+                        }`}>
+                          {deviation < -20 ? '⚠️ ' : deviation < 0 ? '⚡ ' : '✓ '}{deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
+                        </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.totalTasks}
                     </td>
@@ -331,6 +285,7 @@ function KPICard({ title, value, icon, color }) {
     red: 'bg-red-100 text-red-600',
     indigo: 'bg-indigo-100 text-indigo-600'
   };
+  const safeColor = color && colorClasses[color] ? color : 'blue';
   return (
     <div className="card-elevated p-6 lg:p-8 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center justify-between">
@@ -339,7 +294,7 @@ function KPICard({ title, value, icon, color }) {
           <p className="text-4xl lg:text-5xl font-bold text-neutral-900 mt-3">{value}</p>
         </div>
         <div className={`p-4 rounded-xl shadow-sm`} style={{background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.02))'}}>
-          <div className={`${colorClasses[color]} p-3 rounded-lg`}>
+          <div className={`${colorClasses[safeColor] || colorClasses.blue} p-3 rounded-lg`}>
             {icon}
           </div>
         </div>
@@ -347,4 +302,6 @@ function KPICard({ title, value, icon, color }) {
     </div>
   );
 }
+
+
 
