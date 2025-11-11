@@ -13,7 +13,7 @@ services:
       - JWT_SECRET=changeme-please-set-in-.env
       - JWT_EXPIRES_IN=24h
       - LOG_LEVEL=info
-      - CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173,http://host.docker.internal:5173,http://192.168.1.160:5173
+      - CORS_ORIGIN=http://localhost,http://127.0.0.1,http://host.docker.internal,http://192.168.1.160
     volumes:
       - ./backend/data:/app/data
     networks:
@@ -43,6 +43,21 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    container_name: pmo-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf.example:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/var/www/frontend
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - pmo-network
+    restart: unless-stopped
 
 networks:
   pmo-network:
