@@ -11,6 +11,7 @@ import Projects from './components/Projects';
 import ProjectDetail from './components/ProjectDetail';
 import WeeklyTrends from './components/WeeklyTrends';
 import ProjectImplementationTracker from './components/ProjectImplementationTracker';
+import AdminUsers from './components/AdminUsers';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -80,6 +81,26 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               <ProjectDetail />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/projects/:id/avance"
+        element={
+          <PrivateRoute>
+            <Layout>
+              <ProjectImplementationTracker />
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <PrivateRoute>
+            <Layout>
+              {user?.role === 'Admin' ? <AdminUsers /> : <Navigate to="/" />}
             </Layout>
           </PrivateRoute>
         }

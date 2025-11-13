@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { projectsAPI } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle, Clock, AlertTriangle, Calendar, TrendingUp, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function ProjectImplementationTracker() {
-  const [searchParams] = useSearchParams();
-  const projectId = searchParams.get('projectId');
+  const { id: projectId } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
@@ -97,6 +97,24 @@ export default function ProjectImplementationTracker() {
   const plannedValue = totalWeight > 0 ? weightedPV / totalWeight : 0;
   const earnedValue = totalWeight > 0 ? weightedEV / totalWeight : 0;
   const scheduleVariance = earnedValue - plannedValue;
+
+  // Calculate demography by responsible
+  const responsibleStats = {};
+  tasks.forEach(task => {
+    const resp = task.responsible || 'Sin Asignar';
+    if (!responsibleStats[resp]) {
+      responsibleStats[resp] = { totalTasks: 0, totalSV: 0 };
+    }
+    responsibleStats[resp].totalTasks += 1;
+    const pv = calculatePV(task);
+    const ev = task.actual_progress || 0;
+    const sv = ev - pv;
+    responsibleStats[resp].totalSV += sv;
+  });
+  const demographyData = Object.entries(responsibleStats).map(([responsible, stats]) => ({
+    responsible,
+    averageSV: stats.totalTasks > 0 ? stats.totalSV / stats.totalTasks : 0
+  }));
 
   return (
     <div className="p-6 space-y-6">
@@ -227,6 +245,28 @@ export default function ProjectImplementationTracker() {
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Demography Chart */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+          <h2 className="text-xl font-semibold">Demografía de Desempeño por Responsable</h2>
+        </div>
+        <div className="p-6">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={demographyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="responsible" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(value) => [`${value.toFixed(1)}%`, 'Desviación Promedio']} />
+              <Bar dataKey="averageSV">
+                {demographyData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.averageSV < 0 ? '#10b981' : '#ef4444'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FolderKanban, UserCircle, TrendingUp, BarChart3, PieChart } from 'lucide-react';
+import { LogOut, LayoutDashboard, FolderKanban, UserCircle, TrendingUp, BarChart3, PieChart, Users } from 'lucide-react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -113,6 +113,20 @@ export default function Layout({ children }) {
                   </Link>
                 </li>
               </>
+            )}
+
+            {user?.role === 'Admin' && (
+              <li>
+                <Link
+                  to="/admin/users"
+                  className={`sidebar-nav-item ${location.pathname === '/admin/users' ? 'bg-red-50 border-l-4 border-red-600 text-neutral-900' : 'text-neutral-700'}`}
+                  aria-current={location.pathname === '/admin/users' ? 'page' : undefined}
+                  aria-label="Gestión de Usuarios"
+                >
+                  <Users className="w-5 h-5 mr-3 text-red-600" />
+                  Gestión de Usuarios
+                </Link>
+              </li>
             )}
           </ul>
         </nav>

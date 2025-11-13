@@ -181,11 +181,11 @@ export class WeeklySnapshot {
   static async getWeeklySummary(projectId, year, month, weekNumber) {
     try {
       const query = `
-        SELECT 
+        SELECT
           COUNT(*) as total_tasks,
           COUNT(CASE WHEN actual_progress >= 100 THEN 1 END) as completed_tasks,
-          AVG(planned_progress) as avg_planned_progress,
-          AVG(actual_progress) as avg_actual_progress,
+          COALESCE(AVG(planned_progress), 0) as avg_planned_progress,
+          COALESCE(AVG(actual_progress), 0) as avg_actual_progress,
           COUNT(CASE WHEN actual_status = 'P' THEN 1 END) as status_p_count,
           COUNT(CASE WHEN actual_status = 'R' THEN 1 END) as status_r_count,
           COUNT(CASE WHEN actual_status = 'RP' THEN 1 END) as status_rp_count

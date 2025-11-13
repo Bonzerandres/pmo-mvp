@@ -222,7 +222,7 @@ function ProjectCard({ project, onView, user, onDeleteClick }) {
           Ver Detalles
         </button>
         <button
-          onClick={() => navigate(`/progress-tracker?projectId=${project.id}`)}
+          onClick={() => navigate(`/projects/${project.id}/avance`)}
           className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 hover:shadow-md flex items-center justify-center transition duration-200"
         >
           <BarChart3 className="w-4 h-4 mr-2" />

@@ -79,9 +79,9 @@ export default function WeeklyTrends() {
       {/* Line Chart */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-8">
         <ResponsiveContainer width="100%" height={320}>
-          <LineChart data={weeklyTrends?.trends || []} margin={{ top: 16, right: 24, left: 0, bottom: 0 }}>
+          <LineChart data={weeklyTrends?.trends || []} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+            <XAxis dataKey="projectName" tick={{ angle: -45, textAnchor: 'end', fontSize: 10 }} height={80} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
             <Tooltip />
             <Legend />

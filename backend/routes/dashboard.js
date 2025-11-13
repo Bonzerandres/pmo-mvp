@@ -141,6 +141,8 @@ router.get('/portfolio-summary', async (req, res, next) => {
 
       const plannedValue = totalWeight > 0 ? weightedPV / totalWeight : 0;
       const earnedValue = totalWeight > 0 ? weightedActual / totalWeight : 0;
+      const safePlannedValue = isNaN(plannedValue) ? 0 : plannedValue;
+      const safeEarnedValue = isNaN(earnedValue) ? 0 : earnedValue;
 
       // Count tasks by status
       const statusCount = { Completado: 0, 'En Curso': 0, Retrasado: 0, Crítico: 0 };
@@ -149,18 +151,18 @@ router.get('/portfolio-summary', async (req, res, next) => {
       });
 
       // SV (Schedule Variance) = EV - PV
-      const scheduleVariance = earnedValue - plannedValue;
+      const scheduleVariance = safeEarnedValue - safePlannedValue;
 
       return {
         id: project.id,
         name: project.name,
         category: project.category,
-        plannedValue: Math.round(plannedValue * 100) / 100,
-        earnedValue: Math.round(earnedValue * 100) / 100,
+        plannedValue: Math.round(safePlannedValue * 100) / 100,
+        earnedValue: Math.round(safeEarnedValue * 100) / 100,
         scheduleVariance: Math.round(scheduleVariance * 100) / 100,
         // Keep old names for backward compatibility
-        plannedProgress: Math.round(plannedValue * 100) / 100,
-        actualProgress: Math.round(earnedValue * 100) / 100,
+        plannedProgress: Math.round(safePlannedValue * 100) / 100,
+        actualProgress: Math.round(safeEarnedValue * 100) / 100,
         statusCount,
         totalTasks: (project.tasks || []).length
       };

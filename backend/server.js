@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import projectsRoutes from './routes/projects.js';
 import dashboardRoutes from './routes/dashboard.js';
 import calendarRoutes from './routes/calendar.js';
+import usersRoutes from './routes/users.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import expressErrorHandler from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
@@ -52,6 +53,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/user', usersRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

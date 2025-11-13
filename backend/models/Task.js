@@ -1,5 +1,6 @@
 import db from '../database.js';
 import { logger } from '../utils/logger.js';
+import { AuditLog } from './AuditLog.js';
 
 export class Task {
   static async create({ projectId, name, responsible, weight = 1.0, plannedProgress = 0, estimatedDate }) {
@@ -32,6 +33,15 @@ export class Task {
       return await db.allAsync('SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at ASC', [projectId]);
     } catch (err) {
       logger.error('Task.findByProject failed', { err, projectId });
+      throw err;
+    }
+  }
+
+  static async findByResponsible(responsibleName) {
+    try {
+      return await db.allAsync('SELECT * FROM tasks WHERE responsible = ? ORDER BY created_at ASC', [responsibleName]);
+    } catch (err) {
+      logger.error('Task.findByResponsible failed', { err, responsibleName });
       throw err;
     }
   }

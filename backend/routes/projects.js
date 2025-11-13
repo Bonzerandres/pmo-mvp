@@ -123,6 +123,29 @@ router.delete('/:id', idParamValidation, async (req, res, next) => {
   }
 });
 
+// Get project tasks with calculated PV
+router.get('/:id/tasks', idParamValidation, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const canAccess = await User.canAccessProject(user.id, parseInt(id));
+    if (!canAccess) return next(new ForbiddenError('Access denied to project'));
+
+    const tasks = await Task.findByProject(id);
+    // Calculate PV for each task
+    const tasksWithPV = tasks.map(task => ({
+      ...task,
+      pv: Task.calculatePV(task)
+    }));
+
+    res.json(tasksWithPV);
+  } catch (error) {
+    logger.error('Get project tasks error', { error });
+    next(error);
+  }
+});
+
 // Get project metrics
 router.get('/:id/metrics', idParamValidation, async (req, res, next) => {
   try {
