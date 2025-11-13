@@ -152,17 +152,18 @@ function ProjectCard({ project, onView, user, onDeleteClick }) {
   const criticalTasks = project.tasks?.filter(t => t.status === 'Crítico').length || 0;
   const delayedTasks = project.tasks?.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length || 0;
 
-  // Calculate average progress
-  const avgProgress = project.tasks?.length > 0
-    ? project.tasks.reduce((sum, t) => sum + t.actual_progress, 0) / project.tasks.length
+  // Calculate average progress (with zero-division guard)
+  const totalTasks = project.tasks?.length || 0;
+  const avgProgress = totalTasks > 0
+    ? project.tasks.reduce((sum, t) => sum + (t.actual_progress || 0), 0) / totalTasks
     : 0;
 
   return (
     <div className="card-elevated p-8 hover:shadow-card-md transform transition-all duration-200 relative">
       <div className="flex justify-between items-start mb-4">
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-neutral-900 mb-1 truncate">{project.name}</h3>
-          <p className="text-sm text-neutral-600 flex items-center"><span className="mr-2">{project.category}</span></p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xl font-bold text-neutral-900 mb-1 truncate" title={project.name}>{project.name}</h3>
+          <p className="text-sm text-neutral-600 flex items-center truncate" title={project.category}><span className="mr-2">{project.category}</span></p>
         </div>
         {criticalTasks > 0 && (
           <span className="px-3 py-1 bg-danger-50 text-danger-600 rounded-full text-sm font-semibold animate-pulse">

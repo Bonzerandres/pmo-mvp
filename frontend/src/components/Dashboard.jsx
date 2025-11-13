@@ -127,7 +127,7 @@ export default function Dashboard() {
         />
         <KPICard
           title="Avance Promedio"
-          value={`${kpis?.averageProgress?.toFixed(1) || 0}%`}
+          value={`${(kpis?.averageProgress || 0).toFixed(1)}%`}
           icon={<TrendingUp className="w-8 h-8" />}
           color="indigo"
         />
@@ -252,8 +252,10 @@ export default function Dashboard() {
                 const deviation = project.actualProgress - project.plannedProgress;
                 return (
                   <tr key={project.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {project.name}
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="max-w-xs truncate" title={project.name}>
+                        {project.name}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.category}
