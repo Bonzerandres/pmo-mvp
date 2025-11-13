@@ -58,6 +58,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'PMO API is running' });
 });
 
+// Welcome endpoint
+app.get('/api/welcome', (req, res) => {
+  res.json({ message: 'Welcome to the PMO API Service!' });
+});
+
+// Hello endpoint
+app.get('/api/hello', (req, res) => {
+  res.json({ message: 'Hello from the PMO API!' });
+});
+
 // Root route: in production serve frontend, otherwise redirect to API health
 if (process.env.NODE_ENV === 'production') {
   const staticDir = path.resolve(process.cwd(), 'frontend', 'dist');

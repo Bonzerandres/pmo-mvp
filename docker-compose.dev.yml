@@ -12,14 +12,15 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3001
-      - DB_PATH=/app/data/database.db
+      - DB_PATH=/app/database.db
       - JWT_SECRET=changeme-please-set-in-.env
       - JWT_EXPIRES_IN=24h
       - LOG_LEVEL=debug
-      - CORS_ORIGIN=http://localhost,http://127.0.0.1,http://host.docker.internal,http://192.168.1.160
+      - CORS_ORIGIN=http://localhost:5173,http://127.0.0.1:5173,http://host.docker.internal:5173,http://192.168.1.160:5173
     volumes:
       - ./backend:/app
-      - /app/node_modules
+      - backend_node_modules:/app/node_modules
+      - backend_data:/app/data
     networks:
       - pmo-network
     restart: unless-stopped
@@ -41,7 +42,7 @@ services:
       - VITE_API_URL=http://localhost:3001/api
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - frontend_node_modules:/app/node_modules
     depends_on:
       - backend
     networks:
@@ -54,20 +55,10 @@ services:
       retries: 3
       start_period: 10s
 
-  nginx:
-    image: nginx:alpine
-    container_name: pmo-nginx-dev
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf.example:/etc/nginx/conf.d/default.conf
-      - ./frontend:/var/www/frontend
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - pmo-network
-    restart: unless-stopped
+volumes:
+  backend_node_modules:
+  backend_data:
+  frontend_node_modules:
 
 networks:
   pmo-network:

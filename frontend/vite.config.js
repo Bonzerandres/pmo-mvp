@@ -15,12 +15,10 @@ export default defineConfig({
       overlay: true,
       clientPort: 5173
     },
-    historyApiFallback: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        target: 'http://backend:3001',
+        changeOrigin: true
       }
     }
   },
