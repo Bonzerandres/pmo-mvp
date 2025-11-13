@@ -236,20 +236,34 @@ export default function Dashboard() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Categoría
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  <div className="flex items-center space-x-2">
-                    <span>Desviación</span>
-                    <ProgressTooltip content={<div>Desviación = Real - Programado</div>}><Info className="w-4 h-4 text-neutral-400"/></ProgressTooltip>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>PV</span>
+                    <ProgressTooltip content={<div>Planned Value: Avance Programado</div>}><Info className="w-4 h-4 text-neutral-400"/></ProgressTooltip>
                   </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>EV</span>
+                    <ProgressTooltip content={<div>Earned Value: Avance Real</div>}><Info className="w-4 h-4 text-neutral-400"/></ProgressTooltip>
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>SV</span>
+                    <ProgressTooltip content={<div>Schedule Variance: EV - PV (Desviación de Cronograma)</div>}><Info className="w-4 h-4 text-neutral-400"/></ProgressTooltip>
+                  </div>
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tareas
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {portfolioSummary.map((project) => {
-                const deviation = project.actualProgress - project.plannedProgress;
+                const pv = project.plannedValue || 0;
+                const ev = project.earnedValue || 0;
+                const sv = project.scheduleVariance || (ev - pv);
                 return (
                   <tr key={project.id}>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
@@ -260,12 +274,18 @@ export default function Dashboard() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.category}
                     </td>
-                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                          deviation < -10 ? 'bg-red-50 text-red-700 rounded-md px-2 py-1' : deviation < 0 ? 'bg-yellow-50 text-yellow-700 rounded-md px-2 py-1' : 'bg-green-50 text-green-700 rounded-md px-2 py-1'
-                        }`}>
-                          {deviation < -20 ? '⚠️ ' : deviation < 0 ? '⚡ ' : '✓ '}{deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
-                        </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-indigo-600 font-semibold">
+                      {pv.toFixed(1)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-green-600 font-semibold">
+                      {ev.toFixed(1)}%
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-center font-medium ${
+                      sv < -10 ? 'bg-red-50 text-red-700' : sv < 0 ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'
+                    }`}>
+                      {sv < -20 ? '⚠️ ' : sv < 0 ? '⚡ ' : '✓ '}{sv > 0 ? '+' : ''}{sv.toFixed(1)}%
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                       {project.totalTasks}
                     </td>
                   </tr>

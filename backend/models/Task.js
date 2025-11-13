@@ -126,6 +126,36 @@ export class Task {
     return diffDays > 0 ? diffDays : 0;
   }
 
+  /**
+   * Calculate Planned Value (PV) for a task based on current date.
+   * If estimated_date <= today, task should be 100% planned.
+   * Otherwise, use the planned_progress field.
+   * @param {Object} task - Task object with estimated_date and planned_progress
+   * @returns {number} - PV percentage (0-100)
+   */
+  static calculatePV(task) {
+    if (!task) return 0;
+    
+    // If task is completed, PV is 100%
+    if (task.status === 'Completado') return 100;
+    
+    // If no estimated date, use planned_progress
+    if (!task.estimated_date) return task.planned_progress || 0;
+    
+    const estimated = new Date(task.estimated_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    estimated.setHours(0, 0, 0, 0);
+    
+    // If estimated date has passed, planned value should be 100%
+    if (estimated <= today) {
+      return 100;
+    }
+    
+    // Otherwise, return the current planned_progress
+    return task.planned_progress || 0;
+  }
+
   static async delete(id) {
     try {
       await db.runStmt('DELETE FROM tasks WHERE id = ?', [id]);

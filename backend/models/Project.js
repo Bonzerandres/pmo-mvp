@@ -207,7 +207,7 @@ export class Project {
     }
   }
 
-  // Calculate project metrics
+  // Calculate project metrics including PV (Planned Value) and EV (Earned Value)
   static async calculateMetrics(projectId) {
     const tasks = await db.allAsync('SELECT * FROM tasks WHERE project_id = ?', [projectId]);
     
@@ -216,6 +216,9 @@ export class Project {
         totalTasks: 0,
         completedTasks: 0,
         averageProgress: 0,
+        plannedValue: 0,
+        earnedValue: 0,
+        scheduleVariance: 0,
         totalDelayDays: 0,
         criticalTasks: 0,
         delayedTasks: 0
@@ -227,18 +230,35 @@ export class Project {
     const delayedTasks = tasks.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length;
     
     const totalWeight = tasks.reduce((sum, t) => sum + (t.weight || 1), 0);
+    
+    // EV (Earned Value) = Actual Progress weighted by task weight
     const weightedProgress = tasks.reduce((sum, t) => {
       const weight = t.weight || 1;
-      return sum + (t.actual_progress * weight);
+      return sum + ((t.actual_progress || 0) * weight);
     }, 0);
-    const averageProgress = totalWeight > 0 ? weightedProgress / totalWeight : 0;
+    const earnedValue = totalWeight > 0 ? weightedProgress / totalWeight : 0;
+
+    // PV (Planned Value) = Should-be progress based on estimated dates
+    const { Task } = await import('./Task.js');
+    const weightedPV = tasks.reduce((sum, t) => {
+      const weight = t.weight || 1;
+      const pv = Task.calculatePV(t);
+      return sum + (pv * weight);
+    }, 0);
+    const plannedValue = totalWeight > 0 ? weightedPV / totalWeight : 0;
+
+    // SV (Schedule Variance) = EV - PV
+    const scheduleVariance = earnedValue - plannedValue;
 
     const totalDelayDays = tasks.reduce((sum, t) => sum + (t.delay_days || 0), 0);
 
     return {
       totalTasks: tasks.length,
       completedTasks,
-      averageProgress: Math.round(averageProgress * 100) / 100,
+      averageProgress: Math.round(earnedValue * 100) / 100,
+      plannedValue: Math.round(plannedValue * 100) / 100,
+      earnedValue: Math.round(earnedValue * 100) / 100,
+      scheduleVariance: Math.round(scheduleVariance * 100) / 100,
       totalDelayDays,
       criticalTasks,
       delayedTasks

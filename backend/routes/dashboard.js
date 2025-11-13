@@ -121,20 +121,26 @@ router.get('/portfolio-summary', async (req, res, next) => {
     }
 
     const projects = await Project.getAllWithTasks({ page: 1, limit: 1000 });
+    const { Task } = await import('../models/Task.js');
 
     const summary = projects.map(project => {
       const totalWeight = (project.tasks || []).reduce((sum, t) => sum + (t.weight || 1), 0);
-      const weightedPlanned = (project.tasks || []).reduce((sum, t) => {
+      
+      // Calculate PV (Planned Value) using Task.calculatePV
+      const weightedPV = (project.tasks || []).reduce((sum, t) => {
         const weight = t.weight || 1;
-        return sum + ((t.planned_progress || 0) * weight);
+        const pv = Task.calculatePV(t);
+        return sum + (pv * weight);
       }, 0);
+      
+      // Calculate EV (Earned Value) = actual progress
       const weightedActual = (project.tasks || []).reduce((sum, t) => {
         const weight = t.weight || 1;
         return sum + ((t.actual_progress || 0) * weight);
       }, 0);
 
-      const plannedProgress = totalWeight > 0 ? weightedPlanned / totalWeight : 0;
-      const actualProgress = totalWeight > 0 ? weightedActual / totalWeight : 0;
+      const plannedValue = totalWeight > 0 ? weightedPV / totalWeight : 0;
+      const earnedValue = totalWeight > 0 ? weightedActual / totalWeight : 0;
 
       // Count tasks by status
       const statusCount = { Completado: 0, 'En Curso': 0, Retrasado: 0, Crítico: 0 };
@@ -142,12 +148,19 @@ router.get('/portfolio-summary', async (req, res, next) => {
         statusCount[t.status] = (statusCount[t.status] || 0) + 1;
       });
 
+      // SV (Schedule Variance) = EV - PV
+      const scheduleVariance = earnedValue - plannedValue;
+
       return {
         id: project.id,
         name: project.name,
         category: project.category,
-        plannedProgress: Math.round(plannedProgress * 100) / 100,
-        actualProgress: Math.round(actualProgress * 100) / 100,
+        plannedValue: Math.round(plannedValue * 100) / 100,
+        earnedValue: Math.round(earnedValue * 100) / 100,
+        scheduleVariance: Math.round(scheduleVariance * 100) / 100,
+        // Keep old names for backward compatibility
+        plannedProgress: Math.round(plannedValue * 100) / 100,
+        actualProgress: Math.round(earnedValue * 100) / 100,
         statusCount,
         totalTasks: (project.tasks || []).length
       };
