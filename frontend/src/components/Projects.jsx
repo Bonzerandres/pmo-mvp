@@ -153,7 +153,6 @@ function ProjectCard({ project, onView, user, onDeleteClick }) {
   const delayedTasks = project.tasks?.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length || 0;
 
   // Calculate average progress (with zero-division guard)
-  const totalTasks = project.tasks?.length || 0;
   const avgProgress = totalTasks > 0
     ? project.tasks.reduce((sum, t) => sum + (t.actual_progress || 0), 0) / totalTasks
     : 0;
