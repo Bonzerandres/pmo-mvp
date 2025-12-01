@@ -9,9 +9,11 @@ import projectsRoutes from './routes/projects.js';
 import dashboardRoutes from './routes/dashboard.js';
 import calendarRoutes from './routes/calendar.js';
 import usersRoutes from './routes/users.js';
+import grantsRoutes from './routes/grants.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import expressErrorHandler from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
+import { authenticateToken } from './middleware/auth.js';
 
 // __dirname workaround for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +56,7 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/user', usersRoutes);
+app.use('/api/grants', grantsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -68,6 +71,37 @@ app.get('/api/welcome', (req, res) => {
 // Hello endpoint
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from the PMO API!' });
+});
+
+// Service status endpoint for inter-service communication
+app.get('/api/admin/service-status', authenticateToken, (req, res) => {
+  // Check if user is admin
+  if (!req.user || req.user.role !== 'Admin') {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const services = {
+    database: 'operational',
+    api: 'operational',
+    authentication: 'operational',
+    grants: 'operational',
+    users: 'operational',
+    projects: 'operational'
+  };
+
+  // Check database connectivity
+  db.getAsync('SELECT 1').then(() => {
+    services.database = 'operational';
+  }).catch(() => {
+    services.database = 'error';
+  });
+
+  res.json({
+    status: 'operational',
+    services,
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
 });
 
 // Root route: in production serve frontend, otherwise redirect to API health

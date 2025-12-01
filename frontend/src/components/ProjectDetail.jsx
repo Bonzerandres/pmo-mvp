@@ -43,7 +43,7 @@ export default function ProjectDetail() {
 
   const handleTaskUpdate = async (taskId, changes) => {
     if (!user?.canEdit) {
-      alert('No tienes permiso para editar este proyecto');
+      toast.showError('No tienes permiso para editar este proyecto');
       return;
     }
 
@@ -51,7 +51,7 @@ export default function ProjectDetail() {
     const task = project.tasks.find(t => t.id === taskId);
     const newActualProgress = changes.actualProgress ?? task.actual_progress;
     const newDelayDays = changes.delayDays ?? task.delay_days;
-    
+
     // Calculate new status
     const deviation = newActualProgress - task.planned_progress;
     let newStatus = 'En Curso';
@@ -123,8 +123,7 @@ export default function ProjectDetail() {
           <p className="text-neutral-600 mt-1">{project.category}</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="px-3 py-2 rounded-md bg-neutral-50 border border-neutral-200 hover:shadow-sm">Export</button>
-          <button className="px-3 py-2 rounded-md bg-neutral-50 border border-neutral-200 hover:shadow-sm">Share</button>
+          <button className="px-3 py-2 rounded-md bg-neutral-50 border border-neutral-200 text-neutral-400 cursor-not-allowed" title="Próximamente">Exportar</button>
           {user?.role === 'Admin' && (
             <button onClick={() => setShowDeleteModal(true)} className="px-3 py-2 rounded-md delete-button flex items-center border border-danger-200">
               <Trash2 className="w-4 h-4 mr-2" /> Eliminar Proyecto
@@ -143,8 +142,7 @@ export default function ProjectDetail() {
         <div className="px-8 py-4 border-b border-neutral-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-neutral-900">Tareas del Proyecto <span className="text-sm text-neutral-600 ml-2">({project.tasks?.length || 0})</span></h2>
           <div className="flex items-center space-x-3">
-            <button className="px-3 py-2 rounded-md bg-neutral-50 border border-neutral-200 hover:shadow-sm">Export</button>
-            <button className="px-3 py-2 rounded-md bg-neutral-50 border border-neutral-200 hover:shadow-sm">Share</button>
+            {/* Export/Share placeholders removed */}
           </div>
         </div>
 
@@ -351,52 +349,52 @@ export function TaskRow({ task, canEdit, onUpdate, projectId, onSaved }) {
         {task.planned_progress}%
       </td>
       <td className="px-8 py-5 whitespace-nowrap text-sm text-neutral-600">
-          {editing ? (
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <button type="button" onClick={() => setFormData({ ...formData, actualProgress: Math.max(0, (formData.actualProgress || 0) - 5) })} className="px-2 py-1 border rounded">-5</button>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.actualProgress}
-                  onChange={(e) => setFormData({ ...formData, actualProgress: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })}
-                  className="w-20 px-2 py-1 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-400"
-                />
-                <button type="button" onClick={() => setFormData({ ...formData, actualProgress: Math.min(100, (formData.actualProgress || 0) + 5) })} className="px-2 py-1 border rounded">+5</button>
-              </div>
-              <div className="text-xs text-neutral-500">Prev: {task.actual_progress}%</div>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-3">
-              <div className="w-48">
-                <ProgressTooltip content={<div><strong>{task.name}</strong><br/>Programado: {task.planned_progress}%<br/>Real: {task.actual_progress}%<br/>Desviación: {(task.actual_progress - task.planned_progress).toFixed(1)}%</div>}>
-                  <ProgressBar actualProgress={task.actual_progress} plannedProgress={task.planned_progress} showLabel={false} showPlannedMarker size="sm" />
-                </ProgressTooltip>
-              </div>
-              <span className="font-medium text-neutral-900">{task.actual_progress}%</span>
-            </div>
-          )}
-      </td>
-      <td className="px-8 py-5 whitespace-nowrap text-sm text-neutral-600">
-          {editing ? (
-            <div className="flex items-center space-x-2">
-              <button type="button" onClick={() => setFormData({ ...formData, delayDays: 0 })} className="px-2 py-1 border rounded">No Delay</button>
-              <button type="button" onClick={() => setFormData({ ...formData, delayDays: (formData.delayDays || 0) + 1 })} className="px-2 py-1 border rounded">+1</button>
-              <button type="button" onClick={() => setFormData({ ...formData, delayDays: (formData.delayDays || 0) + 7 })} className="px-2 py-1 border rounded">+7</button>
+        {editing ? (
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <button type="button" onClick={() => setFormData({ ...formData, actualProgress: Math.max(0, (formData.actualProgress || 0) - 5) })} className="px-2 py-1 border rounded">-5</button>
               <input
                 type="number"
                 min="0"
-                value={formData.delayDays}
-                onChange={(e) => setFormData({ ...formData, delayDays: parseInt(e.target.value) || 0 })}
-                className="w-20 px-2 py-1 border border-neutral-200 rounded-md focus:outline-none"
+                max="100"
+                value={formData.actualProgress}
+                onChange={(e) => setFormData({ ...formData, actualProgress: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })}
+                className="w-20 px-2 py-1 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-400"
               />
+              <button type="button" onClick={() => setFormData({ ...formData, actualProgress: Math.min(100, (formData.actualProgress || 0) + 5) })} className="px-2 py-1 border rounded">+5</button>
             </div>
-          ) : (
-            <span className={task.delay_days > 0 ? 'font-medium text-danger-600' : 'text-neutral-600'}>
-              {task.delay_days} días
-            </span>
-          )}
+            <div className="text-xs text-neutral-500">Prev: {task.actual_progress}%</div>
+          </div>
+        ) : (
+          <div className="flex items-center space-x-3">
+            <div className="w-48">
+              <ProgressTooltip content={<div><strong>{task.name}</strong><br />Programado: {task.planned_progress}%<br />Real: {task.actual_progress}%<br />Desviación: {(task.actual_progress - task.planned_progress).toFixed(1)}%</div>}>
+                <ProgressBar actualProgress={task.actual_progress} plannedProgress={task.planned_progress} showLabel={false} showPlannedMarker size="sm" />
+              </ProgressTooltip>
+            </div>
+            <span className="font-medium text-neutral-900">{task.actual_progress}%</span>
+          </div>
+        )}
+      </td>
+      <td className="px-8 py-5 whitespace-nowrap text-sm text-neutral-600">
+        {editing ? (
+          <div className="flex items-center space-x-2">
+            <button type="button" onClick={() => setFormData({ ...formData, delayDays: 0 })} className="px-2 py-1 border rounded hover:bg-neutral-50">Sin Retraso</button>
+            <button type="button" onClick={() => setFormData({ ...formData, delayDays: (formData.delayDays || 0) + 1 })} className="px-2 py-1 border rounded">+1</button>
+            <button type="button" onClick={() => setFormData({ ...formData, delayDays: (formData.delayDays || 0) + 7 })} className="px-2 py-1 border rounded">+7</button>
+            <input
+              type="number"
+              min="0"
+              value={formData.delayDays}
+              onChange={(e) => setFormData({ ...formData, delayDays: parseInt(e.target.value) || 0 })}
+              className="w-20 px-2 py-1 border border-neutral-200 rounded-md focus:outline-none"
+            />
+          </div>
+        ) : (
+          <span className={task.delay_days > 0 ? 'font-medium text-danger-600' : 'text-neutral-600'}>
+            {task.delay_days} días
+          </span>
+        )}
       </td>
       <td className="px-8 py-5 whitespace-nowrap">
         <span className={`status-badge ${statusColors[task.status]}`}>{task.status}</span>

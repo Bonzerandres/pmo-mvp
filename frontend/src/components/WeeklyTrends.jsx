@@ -81,7 +81,7 @@ export default function WeeklyTrends() {
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={weeklyTrends?.trends || []} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="projectName" tick={{ angle: -45, textAnchor: 'end', fontSize: 10 }} height={80} />
+            <XAxis dataKey="projectName" angle={-45} textAnchor="end" tick={{ fontSize: 10 }} height={100} interval={0} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
             <Tooltip />
             <Legend />
@@ -96,7 +96,13 @@ export default function WeeklyTrends() {
         <h3 className="text-lg font-semibold mb-4 text-neutral-800">Resumen de la Semana Actual</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {currentWeek?.projects?.length === 0 && (
-            <div className="col-span-full text-neutral-500 text-center py-8">No hay datos para la semana actual.</div>
+            <div className="col-span-full text-center py-12">
+              <div className="w-16 h-16 bg-neutral-100 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-neutral-400" />
+              </div>
+              <p className="text-neutral-600 font-medium">No hay datos de tendencias para esta semana</p>
+              <p className="text-neutral-500 text-sm mt-2">Los datos aparecerán cuando haya proyectos activos con avance registrado.</p>
+            </div>
           )}
           {currentWeek?.projects?.map((proj) => (
             <div key={proj.projectId} className="card-elevated bg-white rounded-xl shadow p-4 flex flex-col gap-2">

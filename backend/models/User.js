@@ -36,6 +36,72 @@ export class User {
     }
   }
 
+  static async findAll({ page = 1, limit = 50 } = {}) {
+    try {
+      const offset = (page - 1) * limit;
+      const users = await db.allAsync(
+        'SELECT id, username, role, canEdit, canView, created_at FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [limit, offset]
+      );
+      return users;
+    } catch (err) {
+      logger.error('User.findAll failed', { err });
+      throw err;
+    }
+  }
+
+  static async update(id, { username, password, role, canEdit, canView }) {
+    try {
+      let query = 'UPDATE users SET updated_at = CURRENT_TIMESTAMP';
+      let params = [];
+      let updates = [];
+
+      if (username !== undefined) {
+        updates.push('username = ?');
+        params.push(username);
+      }
+      if (password !== undefined) {
+        updates.push('password = ?');
+        params.push(password);
+      }
+      if (role !== undefined) {
+        updates.push('role = ?');
+        params.push(role);
+      }
+      if (canEdit !== undefined) {
+        updates.push('canEdit = ?');
+        params.push(canEdit ? 1 : 0);
+      }
+      if (canView !== undefined) {
+        updates.push('canView = ?');
+        params.push(canView);
+      }
+
+      if (updates.length === 0) {
+        return this.findById(id);
+      }
+
+      query += ', ' + updates.join(', ') + ' WHERE id = ?';
+      params.push(id);
+
+      await db.runStmt(query, params);
+      return this.findById(id);
+    } catch (err) {
+      logger.error('User.update failed', { err, id });
+      throw err;
+    }
+  }
+
+  static async delete(id) {
+    try {
+      await db.runStmt('DELETE FROM users WHERE id = ?', [id]);
+      return true;
+    } catch (err) {
+      logger.error('User.delete failed', { err, id });
+      throw err;
+    }
+  }
+
   static async verifyPassword(plainPassword, hashedPassword) {
     try {
       return await bcrypt.compare(plainPassword, hashedPassword);

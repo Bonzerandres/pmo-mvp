@@ -9,7 +9,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState(null);
-  const [newUser, setNewUser] = useState({ username: '', name: '', role: 'PM' });
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'PM', canEdit: false, canView: 'all' });
 
   useEffect(() => {
     loadUsers();
@@ -17,13 +17,16 @@ export default function AdminUsers() {
 
   const loadUsers = async () => {
     try {
-      // Assuming there's an API for users, but since not implemented, mock
-      // For now, since backend doesn't have user CRUD, this is placeholder
-      setUsers([
-        { id: 1, username: 'admin', name: 'Admin User', role: 'Admin' },
-        { id: 2, username: 'pm1', name: 'Project Manager 1', role: 'PM' },
-        { id: 3, username: 'ceo', name: 'CEO', role: 'CEO' }
-      ]);
+      const response = await fetch('/api/user', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (response.ok) {
+        const usersData = await response.json();
+        setUsers(usersData);
+      } else {
+        toast.showError('Error loading users');
+      }
     } catch (error) {
       toast.showError('Error loading users');
     } finally {
@@ -32,20 +35,81 @@ export default function AdminUsers() {
   };
 
   const handleCreate = async () => {
-    // Placeholder
-    toast.showSuccess('User created (placeholder)');
-    setNewUser({ username: '', name: '', role: 'PM' });
+    try {
+      const response = await fetch('/api/user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          username: newUser.username,
+          password: newUser.password,
+          role: newUser.role,
+          canEdit: newUser.canEdit,
+          canView: newUser.canView
+        })
+      });
+
+      if (response.ok) {
+        toast.showSuccess('Usuario creado exitosamente');
+        setNewUser({ username: '', password: '', role: 'PM', canEdit: false, canView: 'all' });
+        loadUsers();
+      } else {
+        const error = await response.json();
+        toast.showError(error.message || 'Error creando usuario');
+      }
+    } catch (error) {
+      toast.showError('Error creando usuario');
+    }
   };
 
   const handleUpdate = async (id) => {
-    // Placeholder
-    toast.showSuccess('User updated (placeholder)');
-    setEditingUser(null);
+    try {
+      const response = await fetch(`/api/user/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          username: editingUser.username,
+          role: editingUser.role,
+          canEdit: editingUser.canEdit,
+          canView: editingUser.canView
+        })
+      });
+
+      if (response.ok) {
+        toast.showSuccess('Usuario actualizado exitosamente');
+        setEditingUser(null);
+        loadUsers();
+      } else {
+        const error = await response.json();
+        toast.showError(error.message || 'Error actualizando usuario');
+      }
+    } catch (error) {
+      toast.showError('Error actualizando usuario');
+    }
   };
 
   const handleDelete = async (id) => {
-    // Placeholder
-    toast.showSuccess('User deleted (placeholder)');
+    try {
+      const response = await fetch(`/api/user/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+
+      if (response.ok) {
+        toast.showSuccess('Usuario eliminado exitosamente');
+        loadUsers();
+      } else {
+        const error = await response.json();
+        toast.showError(error.message || 'Error eliminando usuario');
+      }
+    } catch (error) {
+      toast.showError('Error eliminando usuario');
+    }
   };
 
   if (loading) {
@@ -104,10 +168,10 @@ export default function AdminUsers() {
               className="border p-2 w-full mb-2"
             />
             <input
-              type="text"
-              placeholder="Name"
-              value={newUser.name}
-              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              type="password"
+              placeholder="Password"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               className="border p-2 w-full mb-2"
             />
             <select

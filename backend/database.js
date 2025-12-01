@@ -179,6 +179,25 @@ export async function initDatabase() {
     )
   `);
 
+  // Grants table for grant management
+  await db.runStmt(`
+    CREATE TABLE IF NOT EXISTS grants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      amount REAL NOT NULL,
+      status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'completed', 'cancelled')),
+      project_id INTEGER,
+      assigned_to INTEGER,
+      start_date TEXT,
+      end_date TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL,
+      FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
+    )
+  `);
+
   // Activity log for audit trail
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS activity_log (

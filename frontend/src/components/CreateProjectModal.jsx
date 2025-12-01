@@ -6,6 +6,10 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Infraestructura');
   const [description, setDescription] = useState('');
+  const [assignedUsers, setAssignedUsers] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [grantId, setGrantId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const firstRef = useRef(null);
@@ -14,7 +18,9 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }) {
     if (isOpen) {
       setTimeout(() => firstRef.current?.focus(), 50);
     } else {
-      setName(''); setCategory('Infraestructura'); setDescription(''); setError(null);
+      setName(''); setCategory('Infraestructura'); setDescription('');
+      setAssignedUsers([]); setStartDate(''); setEndDate(''); setGrantId('');
+      setError(null);
     }
   }, [isOpen]);
 

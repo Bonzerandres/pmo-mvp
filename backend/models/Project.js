@@ -1,5 +1,6 @@
 import db from '../database.js';
 import { logger } from '../utils/logger.js';
+import { Task } from './Task.js';
 
 export class Project {
   static async create({ name, category, description }) {
@@ -239,7 +240,6 @@ export class Project {
     const earnedValue = totalWeight > 0 ? weightedProgress / totalWeight : 0;
 
     // PV (Planned Value) = Should-be progress based on estimated dates
-    const { Task } = await import('./Task.js');
     const weightedPV = tasks.reduce((sum, t) => {
       const weight = t.weight || 1;
       const pv = Task.calculatePV(t);

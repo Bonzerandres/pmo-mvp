@@ -12,6 +12,7 @@ import ProjectDetail from './components/ProjectDetail';
 import WeeklyTrends from './components/WeeklyTrends';
 import ProjectImplementationTracker from './components/ProjectImplementationTracker';
 import AdminUsers from './components/AdminUsers';
+import AdminGrants from './components/AdminGrants';
 
 function PrivateRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -30,7 +31,7 @@ function PrivateRoute({ children }) {
 function AppRoutes() {
   const { user } = useAuth();
   const canAccessDashboard = ['CEO', 'CTO', 'Admin'].includes(user?.role);
-  const canAccessProjects = user?.role === 'PM' || user?.role === 'Admin';
+  const canAccessProjects = ['PM', 'Admin', 'CEO'].includes(user?.role);
 
   return (
     <Routes>
@@ -101,6 +102,16 @@ function AppRoutes() {
           <PrivateRoute>
             <Layout>
               {user?.role === 'Admin' ? <AdminUsers /> : <Navigate to="/" />}
+            </Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/grants"
+        element={
+          <PrivateRoute>
+            <Layout>
+              {user?.role === 'Admin' ? <AdminGrants /> : <Navigate to="/" />}
             </Layout>
           </PrivateRoute>
         }

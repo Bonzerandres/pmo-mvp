@@ -57,8 +57,12 @@ export const projectsAPI = {
   getMetrics: (id) => api.get(`/projects/${id}/metrics`),
   createTask: (projectId, data) => api.post(`/projects/${projectId}/tasks`, data),
   updateTask: (projectId, taskId, data) => api.put(`/projects/${projectId}/tasks/${taskId}`, data),
-  deleteTask: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`)
+  deleteTask: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`),
+  // Completion endpoints
+  markComplete: (id, notes) => api.post(`/projects/${id}/complete`, { completion_notes: notes }),
+  getCompleted: (filters) => api.get('/projects/completed', { params: filters })
 };
+
 
 export const dashboardAPI = {
   getKPIs: () => api.get('/dashboard/kpis'),
@@ -73,16 +77,18 @@ export const dashboardAPI = {
    * getCurrentWeek: params => {projectId}
    */
   getWeeklyTrends: (params) => api.get('/dashboard/weekly-trends', { params }),
-  getCurrentWeek: () => api.get('/dashboard/current-week')
+  getCurrentWeek: () => api.get('/dashboard/current-week'),
+  // Completion analytics
+  getCompletionAnalytics: () => api.get('/dashboard/completion-analytics')
 };
 
 export const calendarAPI = {
   // Get calendar grid data with optional date range
-  getCalendarData: (projectId, params) => 
+  getCalendarData: (projectId, params) =>
     api.get(`/calendar/projects/${projectId}/calendar`, { params }),
 
   // Get weekly summary for specific project and week
-  getWeeklySummary: (projectId, params) => 
+  getWeeklySummary: (projectId, params) =>
     api.get(`/calendar/projects/${projectId}/calendar/summary`, { params }),
 
   // Get snapshots for a specific task
