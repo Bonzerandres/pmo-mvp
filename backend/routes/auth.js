@@ -8,8 +8,6 @@ import { logger } from '../utils/logger.js';
 import { UnauthorizedError } from '../middleware/errorHandler.js';
 
 const router = express.Router();
-
-// Login
 router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) => {
   try {
     const { username, password } = req.body;
@@ -46,8 +44,6 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
       secret,
       { expiresIn }
     );
-
-    // Get user projects if PM
     let projects = [];
     if (user.canView === 'assigned') {
       projects = await User.getUserProjects(user.id);
@@ -71,8 +67,6 @@ router.post('/login', loginRateLimiter, loginValidation, async (req, res, next) 
     next(error);
   }
 });
-
-// Get current user
 router.get('/me', authenticateToken, async (req, res, next) => {
   try {
     const user = req.user;

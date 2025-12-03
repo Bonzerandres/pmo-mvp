@@ -9,8 +9,6 @@ const __dirname = path.dirname(__filename);
 
 const DEFAULT_DB = path.join(__dirname, 'database.db');
 const dbPath = process.env.DB_PATH ? path.resolve(process.cwd(), process.env.DB_PATH) : DEFAULT_DB;
-
-// Open the database in serialized mode (default) but with pragmas applied
 const sqlite = sqlite3.verbose();
 const db = new sqlite.Database(dbPath, (err) => {
   if (err) {
@@ -19,13 +17,9 @@ const db = new sqlite.Database(dbPath, (err) => {
   }
   logger.info('Opened SQLite database', { path: dbPath });
 });
-
-// Promisify commonly used methods
 db.runAsync = promisify(db.run.bind(db));
 db.getAsync = promisify(db.get.bind(db));
 db.allAsync = promisify(db.all.bind(db));
-
-// Helper to run statements that return the Statement via callback
 db.runStmt = function(sql, params = []) {
   return new Promise((resolve, reject) => {
     db.run(sql, params, function(err) {
@@ -37,13 +31,9 @@ db.runStmt = function(sql, params = []) {
 
 async function applyPragmas() {
   try {
-    // Enable WAL for better concurrency on Windows
     await db.runStmt('PRAGMA journal_mode = WAL;');
-    // Wait up to 5000ms on locked DB
     await db.runStmt('PRAGMA busy_timeout = 5000;');
-    // Balance durability and performance when using WAL
     await db.runStmt('PRAGMA synchronous = NORMAL;');
-    // Ensure foreign key constraints are enforced
     await db.runStmt('PRAGMA foreign_keys = ON;');
     logger.info('Applied SQLite pragmas: WAL, busy_timeout=5000, synchronous=NORMAL');
   } catch (err) {
@@ -51,19 +41,12 @@ async function applyPragmas() {
     throw err;
   }
 }
-
-// Helper: check if a table has a given column
 async function columnExists(table, column) {
   const row = await db.getAsync(`PRAGMA table_info(${table});`);
-  // PRAGMA table_info returns multiple rows; db.getAsync will return the first row
-  // So use db.allAsync to inspect all columns
   const cols = await db.allAsync(`PRAGMA table_info(${table});`);
   return cols.some(c => c.name === column);
 }
-
-// Add a column only if it doesn't exist yet (SQLite supports ALTER TABLE ADD COLUMN)
 async function addColumnIfNotExists(table, columnDef) {
-  // columnDef should be like: 'new_col INTEGER DEFAULT 0'
   const colName = columnDef.split(/\s+/)[0];
   const exists = await columnExists(table, colName);
   if (!exists) {
@@ -73,12 +56,9 @@ async function addColumnIfNotExists(table, columnDef) {
     logger.info(`Column ${colName} already exists on ${table}, skipping`);
   }
 }
-
-// Initialize database schema
 export async function initDatabase() {
   try {
     await applyPragmas();
-  // Users table
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -90,8 +70,6 @@ export async function initDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Projects table
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,8 +80,6 @@ export async function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
-
-  // Tasks table (Etapas de implementación)
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS tasks (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -123,25 +99,16 @@ export async function initDatabase() {
       FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
     )
   `);
-
-    // Add new task fields for templates / hierarchy as migration-safe ALTERs
     try {
-      // priority: 1 (high) .. 3 (low)
       await addColumnIfNotExists('tasks', "priority INTEGER DEFAULT 2 CHECK(priority IN (1,2,3))");
-      // real delivery date when the task was actually finished
       await addColumnIfNotExists('tasks', "real_delivery_date TEXT");
-      // parent task id for hierarchy
       await addColumnIfNotExists('tasks', "parent_task_id INTEGER");
-      // ordering index within siblings
       await addColumnIfNotExists('tasks', "order_index INTEGER DEFAULT 0");
-      // macro-process marker
       await addColumnIfNotExists('tasks', "is_macro_process INTEGER DEFAULT 0");
     } catch (err) {
       logger.error('Failed to add migrated task columns', { err });
       throw err;
     }
-
-  // Weekly snapshots for task progress tracking
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS weekly_snapshots (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,12 +129,8 @@ export async function initDatabase() {
       UNIQUE(task_id, year, month, week_number)
     )
   `);
-
-  // Create indexes for weekly snapshots
   await db.runStmt('CREATE INDEX IF NOT EXISTS idx_snapshots_project_date ON weekly_snapshots(project_id, year, month)');
   await db.runStmt('CREATE INDEX IF NOT EXISTS idx_snapshots_task_date ON weekly_snapshots(task_id, year, month)');
-
-  // User-Project assignments
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS user_projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -178,8 +141,6 @@ export async function initDatabase() {
       UNIQUE(user_id, project_id)
     )
   `);
-
-  // Grants table for grant management
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS grants (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -197,8 +158,6 @@ export async function initDatabase() {
       FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL
     )
   `);
-
-  // Activity log for audit trail
   await db.runStmt(`
     CREATE TABLE IF NOT EXISTS activity_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,16 +172,12 @@ export async function initDatabase() {
       FOREIGN KEY (task_id) REFERENCES tasks(id)
     )
   `);
-
-    // Database initialization complete
   logger.info('Database initialized successfully');
   } catch (err) {
     logger.error('Error initializing database', { err });
     throw err;
   }
 }
-
-// Transaction helper methods
 db.beginTransaction = function() {
   return db.runAsync('BEGIN TRANSACTION');
 };
@@ -234,8 +189,6 @@ db.commitTransaction = function() {
 db.rollbackTransaction = function() {
   return db.runAsync('ROLLBACK');
 };
-
-// Integrity check utility
 db.checkIntegrity = async function() {
   const res = await db.allAsync('PRAGMA integrity_check');
   return res;

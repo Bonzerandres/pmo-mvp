@@ -6,7 +6,6 @@ import ProgressBar from './ProgressBar';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
 
-
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
 export default function Dashboard() {
@@ -22,7 +21,6 @@ export default function Dashboard() {
   const toast = useToast();
   const { user } = useAuth();
 
-
   useEffect(() => {
     loadData();
     const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
@@ -36,8 +34,6 @@ export default function Dashboard() {
         dashboardAPI.getAlerts(),
         dashboardAPI.getPortfolioSummary()
       ];
-
-      // Add grants summary and service status for admin users
       if (user?.role === 'Admin') {
         promises.push(
           fetch('/api/grants', {
@@ -74,8 +70,6 @@ export default function Dashboard() {
   const filteredAlerts = filter === 'all'
     ? alerts
     : alerts.filter(a => a.severity === filter);
-
-  // Pie chart and analytics removed for executive-only dashboard
   if (loading) {
     return (
       <div className="space-y-6">
@@ -124,8 +118,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-
-      {/* KPIs - 6 card grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard
           title="Total de Proyectos"
@@ -165,7 +158,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Grants Summary for Admin */}
+      {}
       {user?.role === 'Admin' && grantsSummary && (
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
@@ -197,7 +190,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Service Status for Admin */}
+      {}
       {user?.role === 'Admin' && serviceStatus && (
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
@@ -233,7 +226,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Alerts */}
+      {}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -302,9 +295,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-
-
-      {/* Portfolio Table */}
+      {}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Resumen del Portafolio</h2>
@@ -406,6 +397,4 @@ function KPICard({ title, value, icon, color }) {
     </div>
   );
 }
-
-
 

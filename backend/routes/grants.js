@@ -8,12 +8,8 @@ import { logger } from '../utils/logger.js';
 import { NotFoundError, ValidationError } from '../middleware/errorHandler.js';
 
 const router = express.Router();
-
-// All routes require authentication
 router.use(authenticateToken);
 router.use(logActivity);
-
-// Get all grants (Admin only)
 router.get('/', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -26,8 +22,6 @@ router.get('/', async (req, res, next) => {
       limit: parseInt(limit),
       status
     });
-
-    // Get total amount for active grants
     const totalAmount = await Grant.getTotalAmount({ status: 'active' });
 
     res.json({
@@ -40,8 +34,6 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get grant by ID
 router.get('/:id', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -58,8 +50,6 @@ router.get('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Create new grant (Admin only)
 router.post('/', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -79,14 +69,10 @@ router.post('/', async (req, res, next) => {
     if (status && !['active', 'inactive', 'completed', 'cancelled'].includes(status)) {
       return next(new ValidationError('Invalid status'));
     }
-
-    // Validate project exists if provided
     if (projectId) {
       const project = await Project.findById(projectId);
       if (!project) return next(new NotFoundError('Project not found'));
     }
-
-    // Validate user exists if provided
     if (assignedTo) {
       const user = await User.findById(assignedTo);
       if (!user) return next(new NotFoundError('User not found'));
@@ -109,8 +95,6 @@ router.post('/', async (req, res, next) => {
     next(error);
   }
 });
-
-// Update grant (Admin only)
 router.put('/:id', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -130,14 +114,10 @@ router.put('/:id', async (req, res, next) => {
     if (status && !['active', 'inactive', 'completed', 'cancelled'].includes(status)) {
       return next(new ValidationError('Invalid status'));
     }
-
-    // Validate project exists if provided
     if (projectId) {
       const project = await Project.findById(projectId);
       if (!project) return next(new NotFoundError('Project not found'));
     }
-
-    // Validate user exists if provided
     if (assignedTo) {
       const user = await User.findById(assignedTo);
       if (!user) return next(new NotFoundError('User not found'));
@@ -160,8 +140,6 @@ router.put('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Delete grant (Admin only)
 router.delete('/:id', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -179,8 +157,6 @@ router.delete('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get grants by project
 router.get('/project/:projectId', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -198,8 +174,6 @@ router.get('/project/:projectId', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get grants by assignee
 router.get('/assignee/:userId', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {

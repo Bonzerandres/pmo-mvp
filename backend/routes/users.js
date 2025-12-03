@@ -8,12 +8,8 @@ import { NotFoundError, ValidationError } from '../middleware/errorHandler.js';
 import bcrypt from 'bcryptjs';
 
 const router = express.Router();
-
-// All routes require authentication
 router.use(authenticateToken);
 router.use(logActivity);
-
-// Get all users (Admin only)
 router.get('/', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -28,21 +24,15 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get user by ID
 router.get('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    // Users can only see their own profile, unless they are admin
     if (req.user.role !== 'Admin' && req.user.id !== parseInt(id)) {
       return next(new NotFoundError('Access denied'));
     }
 
     const user = await User.findById(id);
     if (!user) return next(new NotFoundError('User not found'));
-
-    // Remove password from response
     const { password, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   } catch (error) {
@@ -50,8 +40,6 @@ router.get('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Create new user (Admin only)
 router.post('/', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -80,19 +68,13 @@ router.post('/', async (req, res, next) => {
     next(error);
   }
 });
-
-// Update user (Admin only or self)
 router.put('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
     const { username, password, role, canEdit, canView } = req.body;
-
-    // Users can only update their own profile, unless they are admin
     if (req.user.role !== 'Admin' && req.user.id !== parseInt(id)) {
       return next(new NotFoundError('Access denied'));
     }
-
-    // Only admins can change roles and permissions
     if (req.user.role !== 'Admin' && (role || canEdit !== undefined || canView)) {
       return next(new NotFoundError('Access denied'));
     }
@@ -122,8 +104,6 @@ router.put('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Delete user (Admin only)
 router.delete('/:id', async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') {
@@ -131,8 +111,6 @@ router.delete('/:id', async (req, res, next) => {
     }
 
     const { id } = req.params;
-
-    // Prevent deleting self
     if (req.user.id === parseInt(id)) {
       return next(new ValidationError('Cannot delete your own account'));
     }
@@ -147,23 +125,15 @@ router.delete('/:id', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get tasks assigned to a specific user
 router.get('/:userId/tasks', async (req, res, next) => {
   try {
     const { userId } = req.params;
     const currentUser = req.user;
-
-    // Users can only see their own tasks, unless they are admin
     if (currentUser.role !== 'Admin' && currentUser.id !== parseInt(userId)) {
       return next(new NotFoundError('Access denied'));
     }
-
-    // Get user info
     const user = await User.findById(userId);
     if (!user) return next(new NotFoundError('User not found'));
-
-    // Get tasks where responsible matches the user's name
     const tasks = await Task.findByResponsible(user.name);
 
     res.json(tasks);

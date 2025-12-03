@@ -38,11 +38,11 @@ export default function Projects() {
     }
   };
 
-  const handleDeleteClick = (project, e) => {
+  function handleDeleteClick(project, e) {
     if (e) e.stopPropagation();
     setProjectToDelete(project);
     setShowDeleteModal(true);
-  };
+  }
 
   const handleDeleteConfirm = async () => {
     if (!projectToDelete) return;
@@ -63,11 +63,11 @@ export default function Projects() {
     }
   };
 
-  const handleCompleteClick = (project, e) => {
+  function handleCompleteClick(project, e) {
     if (e) e.stopPropagation();
     setProjectToComplete(project);
     setShowCompletionModal(true);
-  };
+  }
 
   const handleCompleteConfirm = async (notes) => {
     if (!projectToComplete) return;
@@ -88,13 +88,13 @@ export default function Projects() {
     }
   };
 
-  const handleProjectCreated = async () => {
+  async function handleProjectCreated() {
     toast.showSuccess('Proyecto creado exitosamente');
     setLoading(true);
     await loadProjects();
     setShowCreateModal(false);
     setLoading(false);
-  };
+  }
 
   if (loading) {
     return (
@@ -188,22 +188,20 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
   const totalTasks = project.tasks?.length || 0;
   const completedTasks = project.tasks?.filter(t => t.status === 'Completado').length || 0;
   const criticalTasks = project.tasks?.filter(t => t.status === 'Crítico').length || 0;
-  const delayedTasks = project.tasks?.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length || 0;
+  let delayedTasks = project.tasks?.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length || 0;
 
-  // Calculate average progress (with zero-division guard)
   const avgProgress = totalTasks > 0
     ? project.tasks.reduce((sum, t) => sum + (t.actual_progress || 0), 0) / totalTasks
     : 0;
 
-  // Calculate project health
-  const getProjectHealth = () => {
+  function getProjectHealth() {
     const isCompleted = project.completed || avgProgress >= 100;
     if (isCompleted) return 'completed';
     if (criticalTasks > 0 || delayedTasks > totalTasks * 0.5) return 'critical';
     if (delayedTasks > 0 || avgProgress < 50) return 'at-risk';
     if (avgProgress >= 80) return 'excellent';
     return 'good';
-  };
+  }
 
   const health = getProjectHealth();
   const canComplete = (user?.role === 'Admin' || user?.role === 'PM') && avgProgress >= 95 && !project.completed;
@@ -220,7 +218,6 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
 
   return (
     <div className={`project-card project-card-${health} card-enter stagger-${(index % 6) + 1} p-6 relative group`}>
-      {/* Health Badge */}
       <div className="flex justify-between items-start mb-4">
         <div className={`health-badge ${healthClass}`}>
           <HealthIcon className="w-3.5 h-3.5" />
@@ -239,13 +236,11 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
         )}
       </div>
 
-      {/* Project Name & Category */}
       <div className="mb-4">
         <h3 className="text-xl font-bold text-neutral-900 mb-1 truncate" title={project.name}>{project.name}</h3>
         <p className="text-sm text-neutral-600 truncate" title={project.category}>{project.category}</p>
       </div>
 
-      {/* Progress Bar with Animation */}
       <div className="space-y-3 mb-6">
         <div className="flex justify-between text-sm">
           <span className="text-neutral-600 font-medium">Progreso</span>
@@ -259,7 +254,6 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
         </div>
       </div>
 
-      {/* Stats Grid with Pills */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="stat-pill">
           <span className="text-xs text-neutral-600">Tareas</span>
@@ -279,7 +273,6 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
         </div>
       </div>
 
-      {/* Critical Badge */}
       {criticalTasks > 0 && (
         <div className="mb-4">
           <span className="px-3 py-1.5 bg-danger-50 text-danger-600 rounded-full text-xs font-bold border border-danger-200 inline-flex items-center gap-1 animate-pulse">
@@ -289,7 +282,6 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
         </div>
       )}
 
-      {/* Action Buttons */}
       <div className="flex gap-2 mt-auto">
         {canComplete ? (
           <>
@@ -328,7 +320,6 @@ function ProjectCard({ project, onView, user, onDeleteClick, onCompleteClick, in
         )}
       </div>
 
-      {/* Completed Badge Overlay */}
       {project.completed && (
         <div className="absolute top-4 right-4">
           <div className="completion-badge">

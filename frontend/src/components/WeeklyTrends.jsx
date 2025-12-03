@@ -35,8 +35,6 @@ export default function WeeklyTrends() {
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  // Skeleton loader
   if (loading) {
     return (
       <div className="p-6 animate-pulse">
@@ -53,7 +51,7 @@ export default function WeeklyTrends() {
 
   return (
     <div className="p-6">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <TrendingUp className="w-7 h-7 text-brand-600" />
@@ -76,7 +74,7 @@ export default function WeeklyTrends() {
         </button>
       </div>
 
-      {/* Line Chart */}
+      {}
       <div className="bg-white rounded-xl shadow-md p-6 mb-8">
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={weeklyTrends?.trends || []} margin={{ top: 16, right: 24, left: 0, bottom: 40 }}>
@@ -91,7 +89,7 @@ export default function WeeklyTrends() {
         </ResponsiveContainer>
       </div>
 
-      {/* Current Week Summary Grid */}
+      {}
       <div className="mb-8">
         <h3 className="text-lg font-semibold mb-4 text-neutral-800">Resumen de la Semana Actual</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -125,7 +123,7 @@ export default function WeeklyTrends() {
         </div>
       </div>
 
-      {/* Last Updated */}
+      {}
       <div className="text-right text-xs text-neutral-400">
         Última actualización: {lastUpdated ? lastUpdated.toLocaleTimeString() : '—'}
       </div>

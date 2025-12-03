@@ -34,7 +34,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
-      {/* Mobile Hamburger */}
+      {}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-brand-600 text-white rounded-md shadow-lg"
@@ -43,7 +43,7 @@ export default function Layout({ children }) {
         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Sidebar Overlay for Mobile */}
+      {}
       {sidebarOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -51,7 +51,7 @@ export default function Layout({ children }) {
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside className={`fixed left-0 top-0 h-screen w-sidebar bg-neutral-50 border-r border-neutral-200 flex flex-col transition-transform duration-300 z-40 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="px-6 py-6 border-b border-neutral-200 flex items-center">
           <div className="flex items-center space-x-3">
@@ -83,7 +83,7 @@ export default function Layout({ children }) {
                     </div>
                   </Link>
                 </li>
-                {/* BI Dashboards Section */}
+                {}
                 <li className="nav-section-divider" role="separator" aria-hidden="true">
                   <PieChart className="w-4 h-4 mr-2 text-indigo-400" />
                   Dashboards & BI
@@ -121,7 +121,7 @@ export default function Layout({ children }) {
                     Mis Proyectos
                   </Link>
                 </li>
-                {/* Analytics Section Divider */}
+                {}
                 <li>
                   <Link
                     to="/progress-tracker"

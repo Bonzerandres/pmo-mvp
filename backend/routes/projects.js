@@ -16,12 +16,8 @@ import {
 import { ValidationError, ForbiddenError, NotFoundError } from '../middleware/errorHandler.js';
 
 const router = express.Router();
-
-// All routes require authentication
 router.use(authenticateToken);
 router.use(logActivity);
-
-// Get all projects (with access control) with pagination
 router.get('/', async (req, res, next) => {
   try {
     const user = req.user;
@@ -32,7 +28,6 @@ router.get('/', async (req, res, next) => {
     if (user.canView === 'all' || ['CEO', 'CTO', 'Admin'].includes(user.role)) {
       projects = await Project.getAllWithTasks({ page, limit });
     } else {
-      // PM can only see assigned projects
       const assignedProjects = await User.getUserProjects(user.id);
       projects = await Promise.all(
         assignedProjects.map(p => Project.getWithTasks(p.id))
@@ -45,14 +40,10 @@ router.get('/', async (req, res, next) => {
     next(error);
   }
 });
-
-// Get single project
 router.get('/:id', idParamValidation, async (req, res, next) => {
   try {
     const { id } = req.params;
     const user = req.user;
-
-    // Check access
     const canAccess = await User.canAccessProject(user.id, parseInt(id));
     if (!canAccess) return next(new ForbiddenError('Access denied to project'));
 
@@ -65,8 +56,6 @@ router.get('/:id', idParamValidation, async (req, res, next) => {
     next(error);
   }
 });
-
-// Create project (Admin only)
 router.post('/', projectCreateValidation, async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can create projects'));
@@ -79,8 +68,6 @@ router.post('/', projectCreateValidation, async (req, res, next) => {
     next(error);
   }
 });
-
-// Update project (Admin only)
 router.put('/:id', idParamValidation, projectUpdateValidation, async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can edit projects'));
@@ -97,33 +84,24 @@ router.put('/:id', idParamValidation, projectUpdateValidation, async (req, res, 
     next(error);
   }
 });
-
-// Delete project (Admin only)
 router.delete('/:id', idParamValidation, async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can delete projects'));
 
     const { id } = req.params;
-    // Verify project exists
     const project = await Project.findById(id);
     if (!project) return next(new NotFoundError('Project not found'));
-
-    // Get task count using optimized method
     const taskCount = await Task.getTaskCount(id);
     logger.info('Attempting project delete', { projectId: id, projectName: project.name, taskCount, userId: req.user.id });
 
     const result = await Project.delete(id);
     if (!result) return next(new NotFoundError('Project not found'));
-
-    // Return deletion details
     res.json({ message: 'Project deleted successfully', projectId: parseInt(id, 10), deletedTasks: result.deletedTaskCount || taskCount });
   } catch (error) {
     logger.error('Delete project error', { error });
     next(error);
   }
 });
-
-// Get project tasks with calculated PV
 router.get('/:id/tasks', idParamValidation, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -133,7 +111,6 @@ router.get('/:id/tasks', idParamValidation, async (req, res, next) => {
     if (!canAccess) return next(new ForbiddenError('Access denied to project'));
 
     const tasks = await Task.findByProject(id);
-    // Calculate PV for each task
     const tasksWithPV = tasks.map(task => ({
       ...task,
       pv: Task.calculatePV(task)
@@ -145,8 +122,6 @@ router.get('/:id/tasks', idParamValidation, async (req, res, next) => {
     next(error);
   }
 });
-
-// Get project metrics
 router.get('/:id/metrics', idParamValidation, async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -162,8 +137,6 @@ router.get('/:id/metrics', idParamValidation, async (req, res, next) => {
     next(error);
   }
 });
-
-// Create task (Admin only)
 router.post('/:id/tasks', idParamValidation, taskCreateValidation, async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can create tasks'));
@@ -186,25 +159,18 @@ router.post('/:id/tasks', idParamValidation, taskCreateValidation, async (req, r
     next(error);
   }
 });
-
-// Update task (PM with permission or Admin)
 router.put('/:id/tasks/:taskId', idParamValidation, taskUpdateValidation, async (req, res, next) => {
   try {
     const { id, taskId } = req.params;
     const user = req.user;
-
-    // Check edit permission
     const canEdit = await User.canEditProject(user.id, parseInt(id));
     if (!canEdit && user.role !== 'Admin') return next(new ForbiddenError('No permission to edit this project'));
 
     const { actualProgress, delayDays, comments, evidence, name, responsible, weight, plannedProgress, estimatedDate } = req.body;
-
-    // PM can only update progress, delay, comments, evidence
     let task;
     if (user.role === 'PM') {
       task = await Task.update(taskId, { actualProgress, delayDays, comments, evidence });
     } else {
-      // Admin can update everything
       task = await Task.update(taskId, { name, responsible, weight, plannedProgress, actualProgress, estimatedDate, comments, evidence });
     }
     res.json(task);
@@ -213,8 +179,6 @@ router.put('/:id/tasks/:taskId', idParamValidation, taskUpdateValidation, async 
     next(error);
   }
 });
-
-// Delete task (Admin only)
 router.delete('/:id/tasks/:taskId', idParamValidation, async (req, res, next) => {
   try {
     if (req.user.role !== 'Admin') return next(new ForbiddenError('Only admins can delete tasks'));

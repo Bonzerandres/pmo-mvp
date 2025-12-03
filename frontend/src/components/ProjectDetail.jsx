@@ -46,13 +46,9 @@ export default function ProjectDetail() {
       toast.showError('No tienes permiso para editar este proyecto');
       return;
     }
-
-    // Calculate impact preview
     const task = project.tasks.find(t => t.id === taskId);
     const newActualProgress = changes.actualProgress ?? task.actual_progress;
     const newDelayDays = changes.delayDays ?? task.delay_days;
-
-    // Calculate new status
     const deviation = newActualProgress - task.planned_progress;
     let newStatus = 'En Curso';
     if (newActualProgress >= 100) {
@@ -142,7 +138,7 @@ export default function ProjectDetail() {
         <div className="px-8 py-4 border-b border-neutral-200 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-neutral-900">Tareas del Proyecto <span className="text-sm text-neutral-600 ml-2">({project.tasks?.length || 0})</span></h2>
           <div className="flex items-center space-x-3">
-            {/* Export/Share placeholders removed */}
+            {}
           </div>
         </div>
 
@@ -220,7 +216,7 @@ export default function ProjectDetail() {
         )}
       </div>
 
-      {/* Confirmation Modal */}
+      {}
       {showConfirmModal && pendingChanges && (
         <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 transform transition-all duration-200 scale-100">
@@ -299,7 +295,6 @@ export function TaskRow({ task, canEdit, onUpdate, projectId, onSaved }) {
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    // Directly update the task via API and notify parent on success
     if (!projectId) {
       console.error('projectId is required to update a task');
       toast.showError('Error interno: falta projectId');

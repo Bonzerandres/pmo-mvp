@@ -14,28 +14,18 @@ import { requestLogger } from './middleware/requestLogger.js';
 import expressErrorHandler from './middleware/errorHandler.js';
 import { logger } from './utils/logger.js';
 import { authenticateToken } from './middleware/auth.js';
-
-// __dirname workaround for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load backend env explicitly (stable path)
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
-
-// For static serving (if needed)
 const staticDir = path.resolve(__dirname, '../frontend/dist');
 const PORT = process.env.PORT || 3001;
-
-// Middleware
-// Dynamic CORS origin from env
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
   : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 app.use(cors({
   origin: function(origin, callback) {
-    // allow requests with no origin (like mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
@@ -49,33 +39,22 @@ app.use(cors({
 logger.info('CORS allowed origins:', allowedOrigins);
 app.use(express.json());
 app.use(requestLogger);
-
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/user', usersRoutes);
 app.use('/api/grants', grantsRoutes);
-
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'PMO API is running' });
 });
-
-// Welcome endpoint
 app.get('/api/welcome', (req, res) => {
   res.json({ message: 'Welcome to the PMO API Service!' });
 });
-
-// Hello endpoint
 app.get('/api/hello', (req, res) => {
   res.json({ message: 'Hello from the PMO API!' });
 });
-
-// Service status endpoint for inter-service communication
 app.get('/api/admin/service-status', authenticateToken, (req, res) => {
-  // Check if user is admin
   if (!req.user || req.user.role !== 'Admin') {
     return res.status(403).json({ error: 'Access denied' });
   }
@@ -88,8 +67,6 @@ app.get('/api/admin/service-status', authenticateToken, (req, res) => {
     users: 'operational',
     projects: 'operational'
   };
-
-  // Check database connectivity
   db.getAsync('SELECT 1').then(() => {
     services.database = 'operational';
   }).catch(() => {
@@ -103,8 +80,6 @@ app.get('/api/admin/service-status', authenticateToken, (req, res) => {
     version: '1.0.0'
   });
 });
-
-// Root route: in production serve frontend, otherwise redirect to API health
 if (process.env.NODE_ENV === 'production') {
   const staticDir = path.resolve(process.cwd(), 'frontend', 'dist');
   app.use(express.static(staticDir));
@@ -114,8 +89,6 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   app.get('/', (req, res) => res.redirect('/api/health'));
 }
-
-// Initialize database and start server
 let server;
 
 async function startServer() {
@@ -126,8 +99,6 @@ async function startServer() {
     server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`Server running on http://0.0.0.0:${PORT}`);
     });
-
-    // Graceful shutdown handlers
     const shutdown = async (signal) => {
       try {
         logger.info('Received shutdown signal', { signal });
@@ -156,7 +127,6 @@ async function startServer() {
 
     process.on('uncaughtException', (err) => {
       logger.error('Uncaught Exception', { err });
-      // attempt graceful shutdown
       shutdown('uncaughtException');
     });
 
@@ -165,14 +135,9 @@ async function startServer() {
     process.exit(1);
   }
 }
-
-
-// Add catch-all 404 route
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
-
-// mount global error handler last
 app.use(expressErrorHandler);
 
 startServer();

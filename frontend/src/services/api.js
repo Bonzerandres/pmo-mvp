@@ -9,8 +9,6 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
-
-// Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -18,12 +16,9 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
-
-// Handle 401 errors (unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Network error / timeout
     if (!error.response) {
       return Promise.reject({ message: 'Network error or server is unreachable', original: error });
     }
@@ -36,7 +31,6 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     if (error.response?.status === 403) {
-      // handle forbidden separately if needed
       return Promise.reject({ message: 'You do not have permission to perform this action', original: error });
     }
     return Promise.reject(error);
@@ -58,11 +52,9 @@ export const projectsAPI = {
   createTask: (projectId, data) => api.post(`/projects/${projectId}/tasks`, data),
   updateTask: (projectId, taskId, data) => api.put(`/projects/${projectId}/tasks/${taskId}`, data),
   deleteTask: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`),
-  // Completion endpoints
   markComplete: (id, notes) => api.post(`/projects/${id}/complete`, { completion_notes: notes }),
   getCompleted: (filters) => api.get('/projects/completed', { params: filters })
 };
-
 
 export const dashboardAPI = {
   getKPIs: () => api.get('/dashboard/kpis'),
@@ -71,43 +63,25 @@ export const dashboardAPI = {
     return api.get(url);
   },
   getPortfolioSummary: () => api.get('/dashboard/portfolio-summary'),
-  /**
-   * Fetches weekly trends and current week summary for dashboard analytics.
-   * getWeeklyTrends: params => {projectId, startDate, endDate}
-   * getCurrentWeek: params => {projectId}
-   */
+
   getWeeklyTrends: (params) => api.get('/dashboard/weekly-trends', { params }),
   getCurrentWeek: () => api.get('/dashboard/current-week'),
-  // Completion analytics
   getCompletionAnalytics: () => api.get('/dashboard/completion-analytics')
 };
 
 export const calendarAPI = {
-  // Get calendar grid data with optional date range
   getCalendarData: (projectId, params) =>
     api.get(`/calendar/projects/${projectId}/calendar`, { params }),
-
-  // Get weekly summary for specific project and week
   getWeeklySummary: (projectId, params) =>
     api.get(`/calendar/projects/${projectId}/calendar/summary`, { params }),
-
-  // Get snapshots for a specific task
   getTaskSnapshots: (projectId, taskId, params) =>
     api.get(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, { params }),
-
-  // Create or update weekly snapshot
   createSnapshot: (projectId, taskId, data) =>
     api.post(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, data),
-
-  // Update existing snapshot
   updateSnapshot: (id, data) =>
     api.put(`/calendar/snapshots/${id}`, data),
-
-  // Delete snapshot (Admin only)
   deleteSnapshot: (id) =>
     api.delete(`/calendar/snapshots/${id}`),
-
-  // Bulk create/update snapshots
   bulkCreateSnapshots: (projectId, data) =>
     api.post(`/calendar/projects/${projectId}/snapshots/bulk`, data)
 };

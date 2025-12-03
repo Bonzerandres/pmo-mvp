@@ -142,13 +142,9 @@ export class User {
     try {
       const user = await this.findById(userId);
       if (!user) return false;
-
-      // CEO, CTO, Admin can view all
       if (user.canView === 'all' || ['CEO', 'CTO', 'Admin'].includes(user.role)) {
         return true;
       }
-
-      // PM can only view assigned projects
       const assignment = await db.getAsync('SELECT * FROM user_projects WHERE user_id = ? AND project_id = ?', [userId, projectId]);
       return !!assignment;
     } catch (err) {
@@ -161,20 +157,12 @@ export class User {
     try {
       const user = await this.findById(userId);
       if (!user) return false;
-
-      // Admin can always edit
       if (user.role === 'Admin') return true;
-
-      // Check canEdit permission
       if (!user.canEdit) return false;
-
-      // For PM, must be assigned to the project
       if (user.role === 'PM') {
         const assignment = await db.getAsync('SELECT * FROM user_projects WHERE user_id = ? AND project_id = ?', [userId, projectId]);
         return !!assignment;
       }
-
-      // CEO/CTO cannot edit (read-only)
       return false;
     } catch (err) {
       logger.error('User.canEditProject failed', { err, userId, projectId });

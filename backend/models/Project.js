@@ -39,7 +39,7 @@ export class Project {
   static async update(id, { name, category, description }) {
     try {
       await db.runAsync(
-        `UPDATE projects SET name = ?, category = ?, description = ?, updated_at = CURRENT_TIMESTAMP 
+        `UPDATE projects SET name = ?, category = ?, description = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`,
         [name, category, description, id]
       );
@@ -52,21 +52,15 @@ export class Project {
 
   static async delete(id) {
     try {
-      // Verify project exists and get its name
       const project = await this.findById(id);
       if (!project) {
         return null;
       }
-
-      // Get task count using optimized method
       const taskCount = await Task.getTaskCount(id);
       logger.info('Deleting project and associated tasks', { id, name: project.name, taskCount });
-
-      // Begin transaction for atomic delete
       await db.beginTransaction();
 
       try {
-        // Delete project - tasks will be deleted via ON DELETE CASCADE
         await db.runAsync('DELETE FROM projects WHERE id = ?', [id]);
         await db.commitTransaction();
 
@@ -100,7 +94,6 @@ export class Project {
       );
 
       if (!rows || rows.length === 0) {
-        // The project may exist without tasks
         const project = await this.findById(id);
         if (!project) return null;
         return { ...project, tasks: [] };
@@ -147,7 +140,6 @@ export class Project {
   static async getAllWithTasks({ page = 1, limit = 50 } = {}) {
     try {
       const offset = (page - 1) * limit;
-      // Single query to get projects and tasks
       const rows = await db.allAsync(
         `SELECT p.id as project_id, p.name as project_name, p.category as project_category, p.description as project_description,
                 p.created_at as project_created_at, p.updated_at as project_updated_at,
@@ -194,8 +186,6 @@ export class Project {
           });
         }
       }
-
-      // If no rows returned but there are projects (e.g., projects with no tasks outside limit), fetch projects alone
       if (!rows || rows.length === 0) {
         const projects = await this.findAll({ page, limit });
         return projects.map(p => ({ ...p, tasks: [] }));
@@ -207,11 +197,9 @@ export class Project {
       throw err;
     }
   }
-
-  // Calculate project metrics including PV (Planned Value) and EV (Earned Value)
   static async calculateMetrics(projectId) {
     const tasks = await db.allAsync('SELECT * FROM tasks WHERE project_id = ?', [projectId]);
-    
+
     if (tasks.length === 0) {
       return {
         totalTasks: 0,
@@ -229,25 +217,19 @@ export class Project {
     const completedTasks = tasks.filter(t => t.status === 'Completado').length;
     const criticalTasks = tasks.filter(t => t.status === 'Crítico').length;
     const delayedTasks = tasks.filter(t => t.status === 'Retrasado' || t.status === 'Crítico').length;
-    
+
     const totalWeight = tasks.reduce((sum, t) => sum + (t.weight || 1), 0);
-    
-    // EV (Earned Value) = Actual Progress weighted by task weight
     const weightedProgress = tasks.reduce((sum, t) => {
       const weight = t.weight || 1;
       return sum + ((t.actual_progress || 0) * weight);
     }, 0);
     const earnedValue = totalWeight > 0 ? weightedProgress / totalWeight : 0;
-
-    // PV (Planned Value) = Should-be progress based on estimated dates
     const weightedPV = tasks.reduce((sum, t) => {
       const weight = t.weight || 1;
       const pv = Task.calculatePV(t);
       return sum + (pv * weight);
     }, 0);
     const plannedValue = totalWeight > 0 ? weightedPV / totalWeight : 0;
-
-    // SV (Schedule Variance) = EV - PV
     const scheduleVariance = earnedValue - plannedValue;
 
     const totalDelayDays = tasks.reduce((sum, t) => sum + (t.delay_days || 0), 0);

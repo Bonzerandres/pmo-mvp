@@ -19,7 +19,7 @@ export default function ProjectCompletionModal({ isOpen, onClose, project, onCon
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 transform transition-all duration-300 scale-100 animate-in">
-                {/* Header with gradient */}
+                {}
                 <div className="relative bg-gradient-to-r from-green-500 to-emerald-600 text-white p-8 rounded-t-2xl overflow-hidden">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
@@ -44,14 +44,14 @@ export default function ProjectCompletionModal({ isOpen, onClose, project, onCon
                     </div>
                 </div>
 
-                {/* Project Summary */}
+                {}
                 <div className="p-8">
                     <div className="mb-6">
                         <h3 className="text-2xl font-bold text-neutral-900 mb-2">{project.name}</h3>
                         <p className="text-neutral-600">{project.category}</p>
                     </div>
 
-                    {/* Statistics Grid */}
+                    {}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
                             <div className="flex items-center gap-2 text-green-600 mb-1">
@@ -86,7 +86,7 @@ export default function ProjectCompletionModal({ isOpen, onClose, project, onCon
                         </div>
                     </div>
 
-                    {/* Completion Notes */}
+                    {}
                     <div className="mb-6">
                         <label className="block text-sm font-semibold text-neutral-700 mb-2">
                             Notas de Finalización (Opcional)
@@ -100,7 +100,7 @@ export default function ProjectCompletionModal({ isOpen, onClose, project, onCon
                         />
                     </div>
 
-                    {/* Action Buttons */}
+                    {}
                     <div className="flex gap-3">
                         <button
                             onClick={onClose}
