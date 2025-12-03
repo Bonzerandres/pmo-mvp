@@ -1,0 +1,11 @@
+FROM node:18-alpine
+RUN apk add --no-cache wget
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN chown -R node:node /app
+EXPOSE 5173
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:5173 || exit 1
+USER node
+CMD ["npm", "run", "dev", "--", "--host"]

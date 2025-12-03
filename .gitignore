@@ -1,3 +1,14 @@
+backend/.env
+frontend/.env.production
+frontend/.env.development
+.env.local
+.env.*.local
+docker-compose.override.yml
+backend/database.db
+backend/database.db-shm
+backend/database.db-wal
+backend/data/
+logs/
 node_modules/
 dist/
 build/

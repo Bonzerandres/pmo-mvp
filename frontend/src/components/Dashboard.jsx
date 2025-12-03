@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { dashboardAPI } from '../services/api';
-import { AlertCircle, TrendingUp, Clock, CheckCircle, AlertTriangle, BarChart3, RefreshCw } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AlertCircle, Clock, CheckCircle, AlertTriangle, RefreshCw, Info, TrendingUp, DollarSign, Server, Check, X } from 'lucide-react';
+import ProgressTooltip from './ProgressTooltip';
+import ProgressBar from './ProgressBar';
+import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
@@ -9,8 +12,14 @@ export default function Dashboard() {
   const [kpis, setKpis] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [portfolioSummary, setPortfolioSummary] = useState([]);
+  const [grantsSummary, setGrantsSummary] = useState(null);
+  const [serviceStatus, setServiceStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [filter, setFilter] = useState('all'); // all, high, medium
+  const toast = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadData();
@@ -20,44 +29,47 @@ export default function Dashboard() {
 
   const loadData = async () => {
     try {
-      const [kpisData, alertsData, summaryData] = await Promise.all([
+      const promises = [
         dashboardAPI.getKPIs(),
         dashboardAPI.getAlerts(),
         dashboardAPI.getPortfolioSummary()
-      ]);
+      ];
+      if (user?.role === 'Admin') {
+        promises.push(
+          fetch('/api/grants', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }).then(res => res.ok ? res.json() : { grants: [], totalAmount: 0 }),
+          fetch('/api/admin/service-status', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }).then(res => res.ok ? res.json() : null)
+        );
+      }
 
-      setKpis(kpisData.data);
-      setAlerts(alertsData.data);
-      setPortfolioSummary(summaryData.data);
+      const results = await Promise.all(promises);
+
+      setKpis(results[0].data);
+      setAlerts(results[1].data);
+      setPortfolioSummary(results[2].data);
+
+      if (user?.role === 'Admin') {
+        if (results[3]) setGrantsSummary(results[3]);
+        if (results[4]) setServiceStatus(results[4]);
+      }
+
+      setLastUpdated(new Date());
+      toast.showSuccess('Datos actualizados');
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      toast.showError('Error al cargar datos');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const filteredAlerts = filter === 'all' 
-    ? alerts 
+  const filteredAlerts = filter === 'all'
+    ? alerts
     : alerts.filter(a => a.severity === filter);
-
-  const statusDistribution = portfolioSummary.reduce((acc, project) => {
-    Object.entries(project.statusCount).forEach(([status, count]) => {
-      acc[status] = (acc[status] || 0) + count;
-    });
-    return acc;
-  }, {});
-
-  const pieData = Object.entries(statusDistribution).map(([name, value]) => ({
-    name,
-    value
-  }));
-
-  const barData = portfolioSummary.map(project => ({
-    name: project.name.length > 15 ? project.name.substring(0, 15) + '...' : project.name,
-    'Avance Programado': project.plannedProgress,
-    'Avance Real': project.actualProgress
-  }));
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -72,7 +84,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1,2,3,4,5,6].map(i => (
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <div key={i} className="card-elevated p-6">
               <div className="h-6 w-48 skeleton mb-3" />
               <div className="h-10 w-32 skeleton" />
@@ -90,21 +102,28 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-neutral-900">Dashboard Ejecutivo</h1>
           <p className="text-sm text-neutral-600 mt-1">Vista general del portafolio de proyectos</p>
         </div>
-        <button
-          onClick={loadData}
-          className="inline-flex items-center px-4 py-2 bg-brand-600 text-white rounded-md shadow-sm hover:bg-brand-700 transition duration-200"
-        >
-          <svg className="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v6h6M20 20v-6h-6"/></svg>
-          Actualizar
-        </button>
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={async () => { setRefreshing(true); await loadData(); toast.showInfo('Actualizando datos'); }}
+            disabled={refreshing}
+            className={`inline-flex items-center px-4 py-2 rounded-md shadow-sm transition duration-200 ${refreshing ? 'bg-neutral-200 text-neutral-600' : 'bg-brand-600 text-white hover:bg-brand-700'}`}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            {refreshing ? 'Actualizando...' : 'Actualizar'}
+          </button>
+
+          {lastUpdated && (
+            <div className="text-xs text-neutral-500">Última actualización: {lastUpdated.toLocaleTimeString()}</div>
+          )}
+        </div>
       </div>
 
-      {/* KPIs */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard
           title="Total de Proyectos"
           value={kpis?.totalProjects || 0}
-          icon={<BarChart3 className="w-8 h-8" />}
+          icon={<CheckCircle className="w-8 h-8" />}
           color="blue"
         />
         <KPICard
@@ -121,7 +140,7 @@ export default function Dashboard() {
         />
         <KPICard
           title="Avance Promedio"
-          value={`${kpis?.averageProgress?.toFixed(1) || 0}%`}
+          value={`${(kpis?.averageProgress || 0).toFixed(1)}%`}
           icon={<TrendingUp className="w-8 h-8" />}
           color="indigo"
         />
@@ -139,7 +158,75 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Alerts */}
+      {}
+      {user?.role === 'Admin' && grantsSummary && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <DollarSign className="w-5 h-5 mr-2 text-green-500" />
+              Resumen de Subvenciones
+            </h2>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(grantsSummary.totalAmount)}
+              </div>
+              <div className="text-sm text-gray-500">Total Activo</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="text-lg font-semibold text-green-800">{grantsSummary.grants.filter(g => g.status === 'active').length}</div>
+              <div className="text-sm text-green-600">Subvenciones Activas</div>
+            </div>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="text-lg font-semibold text-blue-800">{grantsSummary.grants.filter(g => g.status === 'completed').length}</div>
+              <div className="text-sm text-blue-600">Subvenciones Completadas</div>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="text-lg font-semibold text-purple-800">{grantsSummary.grants.length}</div>
+              <div className="text-sm text-purple-600">Total de Subvenciones</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {}
+      {user?.role === 'Admin' && serviceStatus && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+              <Server className="w-5 h-5 mr-2 text-blue-500" />
+              Estado de Servicios
+            </h2>
+            <div className="flex items-center">
+              {serviceStatus.status === 'operational' ? (
+                <Check className="w-5 h-5 text-green-500 mr-1" />
+              ) : (
+                <X className="w-5 h-5 text-red-500 mr-1" />
+              )}
+              <span className={`text-sm font-medium ${serviceStatus.status === 'operational' ? 'text-green-600' : 'text-red-600'}`}>
+                {serviceStatus.status === 'operational' ? 'Operativo' : 'Con Problemas'}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {Object.entries(serviceStatus.services).map(([service, status]) => (
+              <div key={service} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700 capitalize">{service}</span>
+                <div className="flex items-center">
+                  {status === 'operational' ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <X className="w-4 h-4 text-red-500" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center">
@@ -149,25 +236,22 @@ export default function Dashboard() {
           <div className="flex space-x-2">
             <button
               onClick={() => setFilter('all')}
-              className={`px-3 py-1 rounded text-sm ${
-                filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded text-sm ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
             >
               Todas
             </button>
             <button
               onClick={() => setFilter('high')}
-              className={`px-3 py-1 rounded text-sm ${
-                filter === 'high' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded text-sm ${filter === 'high' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
             >
               Críticas
             </button>
             <button
               onClick={() => setFilter('medium')}
-              className={`px-3 py-1 rounded text-sm ${
-                filter === 'medium' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'
-              }`}
+              className={`px-3 py-1 rounded text-sm ${filter === 'medium' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
             >
               Medias
             </button>
@@ -180,13 +264,12 @@ export default function Dashboard() {
             filteredAlerts.map((alert, index) => (
               <div
                 key={index}
-                className={`p-3 rounded border-l-4 ${
-                  alert.severity === 'high'
-                    ? 'bg-red-50 border-red-500'
-                    : alert.severity === 'medium'
+                className={`p-3 rounded border-l-4 ${alert.severity === 'high'
+                  ? 'bg-red-50 border-red-500'
+                  : alert.severity === 'medium'
                     ? 'bg-yellow-50 border-yellow-500'
                     : 'bg-blue-50 border-blue-500'
-                }`}
+                  }`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -196,13 +279,12 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <span
-                    className={`ml-2 px-2 py-1 rounded text-xs font-medium ${
-                      alert.severity === 'high'
-                        ? 'bg-red-100 text-red-800'
-                        : alert.severity === 'medium'
+                    className={`ml-2 px-2 py-1 rounded text-xs font-medium ${alert.severity === 'high'
+                      ? 'bg-red-100 text-red-800'
+                      : alert.severity === 'medium'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-blue-100 text-blue-800'
-                    }`}
+                      }`}
                   >
                     {alert.severity === 'high' ? 'Alta' : alert.severity === 'medium' ? 'Media' : 'Baja'}
                   </span>
@@ -213,52 +295,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Avance Programado vs Real
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="Avance Programado" fill="#3b82f6" />
-              <Bar dataKey="Avance Real" fill="#10b981" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Distribución por Estado
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Portfolio Table */}
+      {}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Resumen del Portafolio</h2>
@@ -273,43 +310,55 @@ export default function Dashboard() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Categoría
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avance Programado
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>PV</span>
+                    <ProgressTooltip content={<div>Planned Value: Avance Programado</div>}><Info className="w-4 h-4 text-neutral-400" /></ProgressTooltip>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Avance Real
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>EV</span>
+                    <ProgressTooltip content={<div>Earned Value: Avance Real</div>}><Info className="w-4 h-4 text-neutral-400" /></ProgressTooltip>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Desviación
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <div className="flex items-center justify-center space-x-1">
+                    <span>SV</span>
+                    <ProgressTooltip content={<div>Schedule Variance: EV - PV (Desviación de Cronograma)</div>}><Info className="w-4 h-4 text-neutral-400" /></ProgressTooltip>
+                  </div>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tareas
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {portfolioSummary.map((project) => {
-                const deviation = project.actualProgress - project.plannedProgress;
+                const pv = project.plannedValue || 0;
+                const ev = project.earnedValue || 0;
+                const sv = project.scheduleVariance || (ev - pv);
                 return (
                   <tr key={project.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {project.name}
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <div className="max-w-xs overflow-hidden text-ellipsis whitespace-nowrap" title={project.name}>
+                        {project.name}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {project.category}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.plannedProgress.toFixed(1)}%
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-indigo-600 font-semibold">
+                      {pv.toFixed(1)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {project.actualProgress.toFixed(1)}%
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-green-600 font-semibold">
+                      {ev.toFixed(1)}%
                     </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      deviation < -10 ? 'text-red-600' : deviation < 0 ? 'text-yellow-600' : 'text-green-600'
-                    }`}>
-                      {deviation > 0 ? '+' : ''}{deviation.toFixed(1)}%
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-center font-medium ${sv < -10 ? 'bg-red-50 text-red-700' : sv < 0 ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'
+                      }`}>
+                      {sv < -20 ? '⚠️ ' : sv < 0 ? '⚡ ' : '✓ '}{sv > 0 ? '+' : ''}{sv.toFixed(1)}%
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">
                       {project.totalTasks}
                     </td>
                   </tr>
@@ -331,6 +380,7 @@ function KPICard({ title, value, icon, color }) {
     red: 'bg-red-100 text-red-600',
     indigo: 'bg-indigo-100 text-indigo-600'
   };
+  const safeColor = color && colorClasses[color] ? color : 'blue';
   return (
     <div className="card-elevated p-6 lg:p-8 hover:shadow-lg transition-shadow duration-200">
       <div className="flex items-center justify-between">
@@ -338,8 +388,8 @@ function KPICard({ title, value, icon, color }) {
           <p className="text-xs font-medium tracking-wide text-neutral-600 uppercase">{title}</p>
           <p className="text-4xl lg:text-5xl font-bold text-neutral-900 mt-3">{value}</p>
         </div>
-        <div className={`p-4 rounded-xl shadow-sm`} style={{background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.02))'}}>
-          <div className={`${colorClasses[color]} p-3 rounded-lg`}>
+        <div className={`p-4 rounded-xl shadow-sm`} style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.02))' }}>
+          <div className={`${colorClasses[safeColor] || colorClasses.blue} p-3 rounded-lg`}>
             {icon}
           </div>
         </div>

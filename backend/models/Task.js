@@ -1,5 +1,6 @@
 import db from '../database.js';
 import { logger } from '../utils/logger.js';
+import { AuditLog } from './AuditLog.js';
 
 export class Task {
   static async create({ projectId, name, responsible, weight = 1.0, plannedProgress = 0, estimatedDate }) {
@@ -32,6 +33,28 @@ export class Task {
       return await db.allAsync('SELECT * FROM tasks WHERE project_id = ? ORDER BY created_at ASC', [projectId]);
     } catch (err) {
       logger.error('Task.findByProject failed', { err, projectId });
+      throw err;
+    }
+  }
+
+  static async findByResponsible(responsibleName) {
+    try {
+      return await db.allAsync('SELECT * FROM tasks WHERE responsible = ? ORDER BY created_at ASC', [responsibleName]);
+    } catch (err) {
+      logger.error('Task.findByResponsible failed', { err, responsibleName });
+      throw err;
+    }
+  }
+
+  static async getTaskCount(projectId) {
+    try {
+      const result = await db.getAsync(
+        'SELECT COUNT(*) as count FROM tasks WHERE project_id = ?',
+        [projectId]
+      );
+      return result.count || 0;
+    } catch (err) {
+      logger.error('Task.getTaskCount failed', { err, projectId });
       throw err;
     }
   }
@@ -111,6 +134,36 @@ export class Task {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     return diffDays > 0 ? diffDays : 0;
+  }
+
+  /**
+   * Calculate Planned Value (PV) for a task based on current date.
+   * If estimated_date <= today, task should be 100% planned.
+   * Otherwise, use the planned_progress field.
+   * @param {Object} task - Task object with estimated_date and planned_progress
+   * @returns {number} - PV percentage (0-100)
+   */
+  static calculatePV(task) {
+    if (!task) return 0;
+    
+    // If task is completed, PV is 100%
+    if (task.status === 'Completado') return 100;
+    
+    // If no estimated date, use planned_progress
+    if (!task.estimated_date) return task.planned_progress || 0;
+    
+    const estimated = new Date(task.estimated_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    estimated.setHours(0, 0, 0, 0);
+    
+    // If estimated date has passed, planned value should be 100%
+    if (estimated <= today) {
+      return 100;
+    }
+    
+    // Otherwise, return the current planned_progress
+    return task.planned_progress || 0;
   }
 
   static async delete(id) {
