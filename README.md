@@ -15,7 +15,20 @@
 
 ## 📋 Overview
 
-PMO MVP is an enterprise-grade project portfolio management system built to centralize project tracking, automate status reports, and provide executive visibility through real-time dashboards. The system features role-based access control, automated alerting, and comprehensive audit logging.
+**Client Project** - Developed for a client in Mexico to replace manual Excel-based project management with a modern, tailored web application.
+
+PMO MVP is an enterprise-grade project portfolio management system built to centralize project tracking, automate status reports, and provide executive visibility through real-time dashboards. The system successfully transitioned the client from spreadsheet chaos to streamlined digital workflows with role-based access control, automated alerting, and comprehensive audit logging.
+
+### 🎯 Problem Solved
+
+The client was managing their entire project portfolio through Excel files, leading to:
+- ❌ Version control issues and data inconsistencies
+- ❌ Manual status report compilation
+- ❌ No real-time visibility for executives
+- ❌ Difficulty tracking multiple projects simultaneously
+- ❌ No automated alerts for delays or issues
+
+**Solution:** A custom-built web application that provides real-time collaboration, automated calculations, and instant executive visibility.
 
 ### ✨ Key Features
 
