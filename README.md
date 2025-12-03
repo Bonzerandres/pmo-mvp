@@ -221,8 +221,4 @@ This project was developed as an MVP to modernize project portfolio management. 
 
 <div align="center">
 
-**Built with ❤️ using React, Node.js, and modern web technologies**
 
-*Transforming project management from spreadsheets to real-time dashboards*
-
-</div>
