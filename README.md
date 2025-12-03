@@ -1,262 +1,215 @@
-# Sistema de Gestión de Portafolio de Proyectos (PMO)
+# PMO MVP - Project Management Office System
 
-Sistema completo de gestión de portafolio de proyectos que reemplaza la gestión manual mediante archivos Excel con una solución web centralizada en tiempo real.
+> 🚀 **A modern, full-stack project portfolio management system** replacing manual Excel-based workflows with real-time web application.
 
-## 🚀 Características
+<div align="center">
 
-- **Autenticación Multi-rol**: CEO, CTO, PM (Project Manager), Admin
-- **Actualización en Tiempo Real**: Los PMs pueden actualizar proyectos asignados
-- **Dashboard Ejecutivo**: Observabilidad completa para CEO/CTO con KPIs y alertas
-- **Alertas Automáticas**: Sistema inteligente de alertas basado en métricas
-- **Permisos Granulares**: Control de acceso por usuario y proyecto
-- **Trazabilidad**: Registro completo de cambios y actividades
+![Projects Dashboard](docs/images/projects-dashboard.png)
 
-## 📋 Requisitos
+[![React](https://img.shields.io/badge/React-18-blue?logo=react)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green?logo=node.js)](https://nodejs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.3-blue?logo=tailwindcss)](https://tailwindcss.com/)
+[![Express](https://img.shields.io/badge/Express-4.18-lightgrey?logo=express)](https://expressjs.com/)
+
+</div>
+
+## 📋 Overview
+
+PMO MVP is an enterprise-grade project portfolio management system built to centralize project tracking, automate status reports, and provide executive visibility through real-time dashboards. The system features role-based access control, automated alerting, and comprehensive audit logging.
+
+### ✨ Key Features
+
+- **🎯 Role-Based Access Control** - CEO, CTO, PM, and Admin roles with granular permissions
+- **📊 Real-Time Dashboards** - Executive KPIs, charts, and portfolio analytics
+- **⚡ Premium UI** - Modern design with glassmorphism effects and smooth animations
+- **🔔 Smart Alerts** - Automated notifications for delays and critical issues
+- **📈 Project Health Tracking** - Visual status indicators with health badges
+- **✅ Project Completion Flow** - Streamlined completion workflow with celebration effects
+- **📝 Audit Logging** - Complete activity tracking for compliance
+- **🎨 Responsive Design** - Works seamlessly on desktop, tablet, and mobile
+
+## 🖼️ Screenshots
+
+### Projects Dashboard
+![Projects with Health Indicators](docs/images/projects-dashboard.png)
+*Premium project cards with health-based styling, progress tracking, and status indicators*
+
+### Features Highlighted
+
+- **Health Badges** - Color-coded status (Excellent, Good, At Risk, Critical, Completed)
+- **Progress Animations** - Smooth animated progress bars with gradients
+- **Stats at a Glance** - Quick metrics for tasks, completion, and delays
+- **Smart Actions** - Context-aware buttons for viewing, tracking, and completion
+
+## 🚀 Quick Start
+
+### Prerequisites
 
 - Node.js 18+ 
-- npm o yarn
+- npm or yarn
 
-## 🛠️ Instalación
+### Installation
 
-1. **Instalar dependencias de todos los módulos:**
 ```bash
-npm run install:all
-```
+git clone https://github.com/Bonzerandres/pmo-mvp.git
+cd pmo-mvp
 
-2. **Inicializar la base de datos:**
-```bash
-cd backend
-npm run init-db
-```
+npm install
 
-3. **Configurar variables de entorno (opcional):**
-Copiar el ejemplo y editar las variables sensibles antes de ejecutar en producción:
-```bash
-cp backend/.env.example backend/.env
-# Editar backend/.env
-```
-Para el frontend de desarrollo, use `frontend/.env.development` y para producción `frontend/.env.production`.
+npm run db:init
 
-## 🚀 Ejecución
-
-### Desarrollo (Backend + Frontend simultáneamente)
-```bash
 npm run dev
 ```
 
-### Solo Backend
-```bash
-npm run dev:backend
-```
-
-### Solo Frontend
-```bash
-npm run dev:frontend
-```
-
-El sistema estará disponible en:
-- **Frontend**: http://localhost:3000
+The application will be available at:
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3001
 
-## 👥 Usuarios de Prueba
+### Demo Credentials
 
-El script de inicialización crea los siguientes usuarios:
+| Username | Password | Role | Access |
+|----------|----------|------|--------|
+| `admin` | `admin123` | Admin | Full CRUD access |
+| `ceo` | `ceo123` | CEO | Dashboard & analytics (read-only) |
+| `pm1` | `pm123` | PM | Assigned projects (edit) |
 
-| Usuario | Contraseña | Rol | Permisos |
-|---------|-----------|-----|----------|
-| `ceo` | `ceo123` | CEO | Vista completa, solo lectura |
-| `cto` | `cto123` | CTO | Vista completa, solo lectura |
-| `admin` | `admin123` | Admin | Control total (CRUD completo) |
-| `pm1` | `pm123` | PM | Edita proyectos asignados (primeros 3) |
-| `pm2` | `pm123` | PM | Edita proyectos asignados (últimos 3) |
+## 🎯 Use Cases
 
-## 📊 Proyectos Iniciales
+### For Executives (CEO/CTO)
+- View portfolio health at a glance
+- Monitor project progress in real-time
+- Receive automated alerts for critical issues
+- Track KPIs and performance metrics
 
-El sistema viene con 6 proyectos pre-configurados:
+### For Project Managers (PM)
+- Update assigned projects
+- Track task completion
+- Mark projects as complete
+- View detailed progress metrics
 
-1. **Cámaras de Vigilancia** (Infraestructura)
-2. **Planta de Emergencia** (Infraestructura)
-3. **Red WiFi** (Conectividad)
-4. **Migración Protactic Technology** (Migración)
-5. **Estandarización y Auditoría** (Auditoría)
-6. **Comité de Información** (Gobernanza)
+### For Administrators
+- Create and manage projects
+- Assign projects to team members
+- Manage users and permissions
+- Access complete system controls
 
-## 🎯 Funcionalidades por Rol
-
-### CEO/CTO
-- Dashboard ejecutivo con KPIs en tiempo real
-- Centro de alertas automáticas
-- Visualizaciones (gráficos de barras y pie)
-- Tabla completa del portafolio
-- **Solo lectura** - No pueden editar proyectos
-
-### PM (Project Manager)
-- Vista de proyectos asignados
-- Actualización en tiempo real de:
-  - Avance real (0-100%)
-  - Días de retraso
-  - Comentarios/Evidencias
-- Modal de confirmación antes de guardar cambios
-- Vista previa del impacto de cambios
-
-### Admin
-- Control total del sistema
-- Crear, editar y eliminar proyectos
-- Crear, editar y eliminar tareas
-- Asignar proyectos a PMs
-- Acceso completo a todas las funcionalidades
-
-## 🔔 Sistema de Alertas
-
-El sistema genera alertas automáticas para:
-
-- **Desviación crítica**: Avance real ≤ Avance programado - 30%
-- **Retraso significativo**: Días de retraso > 7
-- **Fecha próxima a vencer**: Proyectos que vencen en ≤ 7 días
-- **Proyectos vencidos**: Fecha estimada < fecha actual
-- **Estado crítico**: Tareas en estado "Crítico"
-
-## 📈 Cálculo Automático de Estado
-
-El sistema calcula automáticamente el estado de cada tarea:
-
-- **Completado**: Avance real = 100%
-- **Crítico**: Desviación ≤ -30% O días retraso > 10
-- **Retrasado**: Desviación < -10% O días retraso > 0
-- **En Curso**: Cualquier otro caso
-
-## 🗄️ Estructura de la Base de Datos
-
-- **users**: Usuarios del sistema con roles y permisos
-- **projects**: Proyectos del portafolio
-- **tasks**: Tareas/etapas de cada proyecto
-- **user_projects**: Asignación de proyectos a usuarios
-- **activity_log**: Registro de actividades para auditoría
-
-## 🔐 Permisos
-
-Cada usuario tiene:
-- **canEdit**: Permiso para editar proyectos (boolean)
-- **canView**: 
-  - `'all'`: Ve todos los proyectos
-  - `'assigned'`: Solo ve proyectos asignados
-- **projects**: Array de IDs de proyectos asignados (para PMs)
-
-## 📝 API Endpoints
-
-### Autenticación
-- `POST /api/auth/login` - Iniciar sesión
-- `GET /api/auth/me` - Obtener usuario actual
-
-### Proyectos
-- `GET /api/projects` - Listar proyectos (con control de acceso)
-- `GET /api/projects/:id` - Obtener proyecto específico
-- `POST /api/projects` - Crear proyecto (Admin only)
-- `PUT /api/projects/:id` - Actualizar proyecto (Admin only)
-- `DELETE /api/projects/:id` - Eliminar proyecto (Admin only)
-- `GET /api/projects/:id/metrics` - Obtener métricas del proyecto
-
-### Tareas
-- `POST /api/projects/:id/tasks` - Crear tarea (Admin only)
-- `PUT /api/projects/:id/tasks/:taskId` - Actualizar tarea (PM/Admin)
-- `DELETE /api/projects/:id/tasks/:taskId` - Eliminar tarea (Admin only)
-
-### Dashboard
-- `GET /api/dashboard/kpis` - Obtener KPIs (CEO/CTO/Admin)
-- `GET /api/dashboard/alerts` - Obtener alertas (CEO/CTO/Admin)
-- `GET /api/dashboard/portfolio-summary` - Resumen del portafolio (CEO/CTO/Admin)
-
-## 🛠️ Tecnologías
-
-### Backend
-- Node.js + Express
-- SQLite (fácil migración a PostgreSQL)
-- JWT para autenticación
-- bcryptjs para hash de contraseñas
+## 🛠️ Tech Stack
 
 ### Frontend
-- React 18
-- React Router
-- Tailwind CSS
-- Recharts para visualizaciones
-- Axios para peticiones HTTP
-- Vite como bundler
+- **React 18** - Modern UI with hooks
+- **Tailwind CSS** - Utility-first styling
+- **Vite** - Lightning-fast build tool
+- **Recharts** - Data visualization
+- **Lucide React** - Beautiful icons
 
-## 📦 Estructura del Proyecto
+### Backend
+- **Node.js + Express** - REST API server
+- **SQLite** - Lightweight database (easily migrated to PostgreSQL)
+- **JWT Authentication** - Secure token-based auth
+- **bcryptjs** - Password hashing
+
+## 📁 Project Structure
 
 ```
-PMO MVP/
-├── backend/
-│   ├── models/          # Modelos de datos
-│   ├── routes/          # Rutas de la API
-│   ├── middleware/      # Middleware (auth, logging)
-│   ├── scripts/         # Scripts de utilidad
-│   ├── database.js      # Configuración de BD
-│   └── server.js        # Servidor Express
-├── frontend/
+pmo-mvp/
+├── frontend/               # React application
 │   ├── src/
-│   │   ├── components/  # Componentes React
-│   │   ├── context/     # Context API
-│   │   ├── services/    # Servicios API
-│   │   └── App.jsx      # Componente principal
-│   └── ...
-└── package.json         # Configuración raíz
+│   │   ├── components/    # React components
+│   │   ├── context/       # Auth & Toast contexts
+│   │   ├── services/      # API service layer
+│   │   └── App.jsx        # Main app component
+│   └── vite.config.js
+├── backend/               # Express API server
+│   ├── models/           # Data models
+│   ├── routes/           # API routes
+│   ├── middleware/       # Auth & logging
+│   ├── database.js       # DB configuration
+│   └── server.js         # Server entry point
+└── docs/                 # Documentation & assets
 ```
 
-## 🔄 Actualización en Tiempo Real
+## 🎨 Design Highlights
 
-El dashboard se actualiza automáticamente cada 30 segundos. Los cambios realizados por PMs se reflejan inmediatamente en el dashboard ejecutivo.
+### Premium Project Cards
+- **Glassmorphism Effects** - Modern, translucent design
+- **Status-Based Styling** - Color-coded borders and backgrounds
+- **Hover Animations** - Smooth lift and shadow effects
+- **Gradient Buttons** - Eye-catching CTAs with hover states
 
-## 📱 Responsive
+### Health-Based Indicators
+- 🟢 **Excellent** - On track, >80% progress
+- 🔵 **Good** - Normal progress
+- 🟡 **At Risk** - Behind schedule or low progress
+- 🔴 **Critical** - Severely delayed or critical tasks
+- ✨ **Completed** - Project finished with celebration badge
 
-La interfaz es completamente responsive y funciona en dispositivos móviles, tablets y desktop.
+## 📊 Analytics & Insights
 
-## 🚨 Notas de Seguridad
+- **Portfolio Summary** - Total projects, completion rate, avg progress
+- **KPI Dashboard** - Key metrics with trend indicators
+- **Alert Center** - Critical notifications and warnings
+- **Progress Tracking** - Visual charts and graphs
+- **Earned Value** - PV/EV/SV calculations for financial tracking
 
-- Las contraseñas se almacenan con hash bcrypt
-- Los tokens JWT expiran en 24 horas
-- Validación de permisos en cada endpoint
-- Registro de actividades para auditoría
+## 🔐 Security Features
 
-## 📄 Licencia
+- **JWT Authentication** - Secure session management
+- **Password Hashing** - bcrypt with salt rounds
+- **Role-Based Permissions** - Granular access control
+- **Activity Logging** - Complete audit trail
+- **Input Validation** - express-validator middleware
 
-Este proyecto es un MVP desarrollado para reemplazar la gestión manual de proyectos mediante Excel.
+## 📝 API Documentation
 
-## Recent changes (automated)
+### Authentication
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user
 
-- UI redesign: left-sidebar layout, updated Tailwind theme and global CSS.
-- Updated components: `Layout.jsx`, `Dashboard.jsx`, `Projects.jsx`, `ProjectDetail.jsx`.
-- Frontend build artifacts available in `frontend/dist` (production build completed).
-- Backend `Project` model already standardized to use promisified DB helpers.
+### Projects
+- `GET /api/projects` - List accessible projects
+- `GET /api/projects/:id` - Get project details
+- `POST /api/projects` - Create project (Admin)
+- `PUT /api/projects/:id` - Update project
+- `DELETE /api/projects/:id` - Delete project (Admin)
 
-How to run locally
+### Dashboard
+- `GET /api/dashboard/kpis` - Get KPIs
+- `GET /api/dashboard/alerts` - Get alerts
+- `GET /api/dashboard/portfolio-summary` - Portfolio metrics
 
-1. Install dependencies:
-```powershell
-cd "c:\Users\bonze\OneDrive\Escritorio\PMO MVP"
-npm ci
-cd frontend
-npm ci
-cd ../backend
-npm ci
-```
+## 🚀 Deployment
 
-2. Start backend:
-```powershell
-cd backend
-node server.js
-```
+The application is production-ready and can be deployed to:
+- **Frontend**: Vercel, Netlify, or any static hosting
+- **Backend**: Heroku, Railway, Render, or VPS
+- **Database**: PostgreSQL for production (simple migration from SQLite)
 
-3. Start frontend dev server:
-```powershell
-cd frontend
-npm run dev -- --port 5173
-```
+## 📈 Roadmap
 
-To push this repository to a remote, add a remote URL and push:
-```powershell
-cd "c:\Users\bonze\OneDrive\Escritorio\PMO MVP"
-git remote add origin <your-remote-url>
-git push -u origin main
-```
+- [ ] WebSocket integration for real-time updates
+- [ ] Email notifications
+- [ ] File attachments for projects
+- [ ] Advanced reporting and exports
+- [ ] Mobile native apps (React Native)
+- [ ] Integration with external tools (Jira, Slack)
 
+## 👨‍💻 Developer
+
+**Andres Bonzer**
+- GitHub: [@Bonzerandres](https://github.com/Bonzerandres)
+- LinkedIn: [Your LinkedIn]
+- Portfolio: [Your Portfolio]
+
+## 📄 License
+
+This project was developed as an MVP to modernize project portfolio management. Feel free to use it as reference or inspiration for your own projects.
+
+---
+
+<div align="center">
+
+**Built with ❤️ using React, Node.js, and modern web technologies**
+
+*Transforming project management from spreadsheets to real-time dashboards*
+
+</div>
