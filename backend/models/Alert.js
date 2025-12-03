@@ -152,7 +152,6 @@ export class Alert {
       const averageProgress = projectProgresses.length > 0
         ? projectProgresses.reduce((sum, p) => sum + p, 0) / projectProgresses.length
         : 0;
-      const safeAverageProgress = isNaN(averageProgress) ? 0 : averageProgress;
 
       // Total delay days
       const totalDelayDays = tasks.reduce((sum, t) => sum + (t.delay_days || 0), 0);
@@ -167,7 +166,7 @@ export class Alert {
         totalProjects,
         completedProjects,
         delayedProjects,
-        averageProgress: Math.round(safeAverageProgress * 100) / 100,
+        averageProgress: Math.round(averageProgress * 100) / 100,
         totalDelayDays,
         highPriorityProjects
       };

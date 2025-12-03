@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -9,6 +9,8 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
+
+// Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -16,9 +18,12 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Handle 401 errors (unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Network error / timeout
     if (!error.response) {
       return Promise.reject({ message: 'Network error or server is unreachable', original: error });
     }
@@ -31,6 +36,7 @@ api.interceptors.response.use(
       window.location.href = '/login';
     }
     if (error.response?.status === 403) {
+      // handle forbidden separately if needed
       return Promise.reject({ message: 'You do not have permission to perform this action', original: error });
     }
     return Promise.reject(error);
@@ -51,9 +57,7 @@ export const projectsAPI = {
   getMetrics: (id) => api.get(`/projects/${id}/metrics`),
   createTask: (projectId, data) => api.post(`/projects/${projectId}/tasks`, data),
   updateTask: (projectId, taskId, data) => api.put(`/projects/${projectId}/tasks/${taskId}`, data),
-  deleteTask: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`),
-  markComplete: (id, notes) => api.post(`/projects/${id}/complete`, { completion_notes: notes }),
-  getCompleted: (filters) => api.get('/projects/completed', { params: filters })
+  deleteTask: (projectId, taskId) => api.delete(`/projects/${projectId}/tasks/${taskId}`)
 };
 
 export const dashboardAPI = {
@@ -62,28 +66,7 @@ export const dashboardAPI = {
     const url = projectId ? `/dashboard/alerts?projectId=${projectId}` : '/dashboard/alerts';
     return api.get(url);
   },
-  getPortfolioSummary: () => api.get('/dashboard/portfolio-summary'),
-
-  getWeeklyTrends: (params) => api.get('/dashboard/weekly-trends', { params }),
-  getCurrentWeek: () => api.get('/dashboard/current-week'),
-  getCompletionAnalytics: () => api.get('/dashboard/completion-analytics')
-};
-
-export const calendarAPI = {
-  getCalendarData: (projectId, params) =>
-    api.get(`/calendar/projects/${projectId}/calendar`, { params }),
-  getWeeklySummary: (projectId, params) =>
-    api.get(`/calendar/projects/${projectId}/calendar/summary`, { params }),
-  getTaskSnapshots: (projectId, taskId, params) =>
-    api.get(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, { params }),
-  createSnapshot: (projectId, taskId, data) =>
-    api.post(`/calendar/projects/${projectId}/tasks/${taskId}/snapshots`, data),
-  updateSnapshot: (id, data) =>
-    api.put(`/calendar/snapshots/${id}`, data),
-  deleteSnapshot: (id) =>
-    api.delete(`/calendar/snapshots/${id}`),
-  bulkCreateSnapshots: (projectId, data) =>
-    api.post(`/calendar/projects/${projectId}/snapshots/bulk`, data)
+  getPortfolioSummary: () => api.get('/dashboard/portfolio-summary')
 };
 
 export default api;

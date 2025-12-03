@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, LayoutDashboard, FolderKanban, UserCircle, TrendingUp, BarChart3, PieChart, Users, DollarSign, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, FolderKanban, UserCircle } from 'lucide-react';
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -16,11 +15,6 @@ export default function Layout({ children }) {
 
   const isDashboard = location.pathname === '/';
   const isProjects = location.pathname.startsWith('/projects');
-  const isWeeklyTrends = location.pathname === '/weekly-trends';
-  const isProgressTracker = location.pathname === '/progress-tracker';
-  const isBI = location.pathname.startsWith('/bi');
-  const isAdminUsers = location.pathname === '/admin/users';
-  const isAdminGrants = location.pathname === '/admin/grants';
 
   const canAccessDashboard = ['CEO', 'CTO', 'Admin'].includes(user?.role);
   const canAccessProjects = user?.role === 'PM' || user?.role === 'Admin';
@@ -34,25 +28,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
-      {}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-brand-600 text-white rounded-md shadow-lg"
-        aria-label="Toggle menu"
-      >
-        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
-
-      {}
-      {sidebarOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {}
-      <aside className={`fixed left-0 top-0 h-screen w-sidebar bg-neutral-50 border-r border-neutral-200 flex flex-col transition-transform duration-300 z-40 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className="fixed left-0 top-0 h-screen w-sidebar bg-neutral-50 border-r border-neutral-200 flex flex-col">
         <div className="px-6 py-6 border-b border-neutral-200 flex items-center">
           <div className="flex items-center space-x-3">
             <div className="bg-brand-500 text-white rounded-md p-2">
@@ -68,99 +44,31 @@ export default function Layout({ children }) {
         <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Main navigation">
           <ul className="space-y-1">
             {canAccessDashboard && (
-              <>
-                <li>
-                  <Link
-                    to="/"
-                    className={`sidebar-nav-item ${isDashboard ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={isDashboard ? 'page' : undefined}
-                    aria-label="Dashboard"
-                  >
-                    <LayoutDashboard className="w-5 h-5 mr-3 text-brand-600" />
-                    <div className="flex flex-col">
-                      <span>Dashboard</span>
-                      <span className="nav-link-subtitle">Resumen ejecutivo</span>
-                    </div>
-                  </Link>
-                </li>
-                {}
-                <li className="nav-section-divider" role="separator" aria-hidden="true">
-                  <PieChart className="w-4 h-4 mr-2 text-indigo-400" />
-                  Dashboards & BI
-                </li>
-                <li>
-                  <Link
-                    to="/bi/weekly-trends"
-                    className={`sidebar-nav-item-analytics border-l-2 border-indigo-300 pl-3 ${isBI ? 'bg-indigo-50 border-l-4 border-indigo-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={isBI ? 'page' : undefined}
-                    aria-label="Dashboards y BI"
-                  >
-                    <div className="flex flex-col">
-                      <div className="flex items-center">
-                        <TrendingUp className="w-5 h-5 mr-3 text-indigo-600" />
-                        Tendencias Semanales
-                        <span className="nav-badge-analytics ml-2"><TrendingUp className="w-3 h-3 mr-1" />BI</span>
-                      </div>
-                      <span className="nav-link-subtitle">Dashboards y Analítica</span>
-                    </div>
-                  </Link>
-                </li>
-              </>
+              <li>
+                <Link
+                  to="/"
+                  className={`sidebar-nav-item ${isDashboard ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
+                  aria-current={isDashboard ? 'page' : undefined}
+                  aria-label="Dashboard"
+                >
+                  <LayoutDashboard className="w-5 h-5 mr-3 text-brand-600" />
+                  Dashboard
+                </Link>
+              </li>
             )}
 
             {canAccessProjects && (
-              <>
-                <li>
-                  <Link
-                    to="/projects"
-                    className={`sidebar-nav-item ${isProjects ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={isProjects ? 'page' : undefined}
-                    aria-label="Mis Proyectos"
-                  >
-                    <FolderKanban className="w-5 h-5 mr-3 text-brand-600" />
-                    Mis Proyectos
-                  </Link>
-                </li>
-                {}
-                <li>
-                  <Link
-                    to="/progress-tracker"
-                    className={`sidebar-nav-item ${isProgressTracker ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={isProgressTracker ? 'page' : undefined}
-                    aria-label="Avance de Tareas"
-                  >
-                    <BarChart3 className="w-5 h-5 mr-3 text-brand-600" />
-                    Avance de Tareas
-                  </Link>
-                </li>
-              </>
-            )}
-
-            {user?.role === 'Admin' && (
-              <>
-                <li>
-                  <Link
-                    to="/admin/users"
-                    className={`sidebar-nav-item ${location.pathname === '/admin/users' ? 'bg-red-50 border-l-4 border-red-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={location.pathname === '/admin/users' ? 'page' : undefined}
-                    aria-label="Gestión de Usuarios"
-                  >
-                    <Users className="w-5 h-5 mr-3 text-red-600" />
-                    Gestión de Usuarios
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/admin/grants"
-                    className={`sidebar-nav-item ${location.pathname === '/admin/grants' ? 'bg-green-50 border-l-4 border-green-600 text-neutral-900' : 'text-neutral-700'}`}
-                    aria-current={location.pathname === '/admin/grants' ? 'page' : undefined}
-                    aria-label="Gestión de Subvenciones"
-                  >
-                    <DollarSign className="w-5 h-5 mr-3 text-green-600" />
-                    Gestión de Subvenciones
-                  </Link>
-                </li>
-              </>
+              <li>
+                <Link
+                  to="/projects"
+                  className={`sidebar-nav-item ${isProjects ? 'bg-brand-50 border-l-4 border-brand-600 text-neutral-900' : 'text-neutral-700'}`}
+                  aria-current={isProjects ? 'page' : undefined}
+                  aria-label="Mis Proyectos"
+                >
+                  <FolderKanban className="w-5 h-5 mr-3 text-brand-600" />
+                  Mis Proyectos
+                </Link>
+              </li>
             )}
           </ul>
         </nav>
@@ -190,8 +98,8 @@ export default function Layout({ children }) {
         </div>
       </aside>
 
-      <main className="lg:ml-sidebar min-h-screen">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="ml-sidebar min-h-screen">
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {children}
         </div>
       </main>
